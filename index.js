@@ -168,6 +168,7 @@ var ComboPaintDocument = class extends CanvasWrapper {
   constructor(height = 100, width = 100) {
     super();
     this.layers = [];
+    this.selectedLayer = null;
     this.width = width;
     this.height = height;
   }
@@ -185,6 +186,9 @@ var ComboPaintDocument = class extends CanvasWrapper {
   }
   addLayer(layer, index = this.layers.length) {
     this.layers.splice(index, 0, layer);
+    if (this.selectedLayer == null) {
+      this.selectedLayer = layer;
+    }
   }
   render() {
     this.ctx.clearRect(0, 0, this.width, this.height);
@@ -203,7 +207,7 @@ var ComboPaintDocument = class extends CanvasWrapper {
   }
 };
 
-// src/CPLayer.ts
+// src/Layers/CPLayer.ts
 var CPLayer = class extends CanvasWrapper {
   constructor(width, height, name = "New Layer") {
     super();
@@ -218,7 +222,7 @@ var CPLayer = class extends CanvasWrapper {
   }
 };
 
-// src/BackgroundLayer.ts
+// src/Layers/BackgroundLayer.ts
 var BackgroundLayer = class extends CPLayer {
   constructor(width, height, fillStyle = "white") {
     super(width, height, "Background");
@@ -293,6 +297,11 @@ var PointerPoint = class {
   }
 };
 var PointerEventHandler = class extends EventHandler {
+  constructor() {
+    super();
+    console.log("PointerEventHandler created");
+    this.registerEvent("any", this.onAny.bind(this));
+  }
   static bindWithElement(element) {
     let handler = new PointerEventHandler();
     element.addEventListener("pointerdown", handler.rawPointerEvent.bind(handler));
@@ -308,6 +317,14 @@ var PointerEventHandler = class extends EventHandler {
   rawPointerEvent(rawEvent) {
     let point = PointerPoint.pointerEventToPointerPoint(rawEvent);
     this.triggerEvent("any", point);
+  }
+  onAny(point) {
+    console.log(
+      {
+        x: point.pos.x,
+        y: point.pos.y
+      }
+    );
   }
 };
 

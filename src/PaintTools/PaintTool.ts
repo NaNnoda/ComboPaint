@@ -1,39 +1,11 @@
-import {CPLayer} from "../Layers/CPLayer";
-import {PointerEventHandler} from "../Events/PointerEventHandler";
+import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 
-export class PaintTool2D {
+export class PaintTool {
     name: string;
+    eventHandler: PaintToolEventHandler;
 
-    pointerEventHandler: PointerEventHandler
-
-    _layer: CPLayer | null = null;
-
-    constructor(pointerEventHandler: PointerEventHandler, name: string | null = null) {
-        this.pointerEventHandler = pointerEventHandler;
-        if (name === null) {
-            name = this.constructor.name;
-        }
+    constructor(name: string) {
         this.name = name;
+        this.eventHandler = new PaintToolEventHandler(this);
     }
-
-    setLayer(layer: CPLayer) {
-        this._layer = layer;
-    }
-
-    get layer() {
-        if (this._layer === null) {
-            throw new Error("Layer not set");
-        }
-        return this._layer;
-    }
-
-    get ctx() {
-        return this.layer.ctx;
-    }
-
-    get canvas() {
-        return this.layer.canvas;
-    }
-
-
 }

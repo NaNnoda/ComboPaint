@@ -19,17 +19,14 @@ export class PointerPoint {
 }
 
 export class PointerEventHandler extends EventHandler<PointerEventKeys> {
+    constructor() {
+        super();
+        console.log("PointerEventHandler created");
+        this.registerEvent("any", this.onAny.bind(this));
+    }
+
     static bindWithElement(element: HTMLElement) {
         let handler = new PointerEventHandler();
-
-        // function addEvent(event: keyof HTMLElementEventMap) {
-        //     element.addEventListener(
-        //         event,
-        //         handler.rawPointerEvent.bind(handler)
-        //     );
-        //
-        // }
-
         element.addEventListener("pointerdown", handler.rawPointerEvent.bind(handler));
         element.addEventListener("pointerup", handler.rawPointerEvent.bind(handler));
         element.addEventListener("pointermove", handler.rawPointerEvent.bind(handler));
@@ -44,6 +41,13 @@ export class PointerEventHandler extends EventHandler<PointerEventKeys> {
     rawPointerEvent(rawEvent: PointerEvent) {
         let point = PointerPoint.pointerEventToPointerPoint(rawEvent);
         this.triggerEvent("any", point);
+    }
+
+    onAny(point: PointerPoint) {
+        console.log(
+            {
+                x: point.pos.x, y: point.pos.y
+            });
     }
 }
 

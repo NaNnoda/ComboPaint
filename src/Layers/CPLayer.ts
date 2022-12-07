@@ -1,4 +1,4 @@
-import {CanvasWrapper} from "./CanvasWrapper";
+import {CanvasWrapper} from "../CanvasWrapper";
 
 export class CPLayer extends CanvasWrapper {
     name: string;

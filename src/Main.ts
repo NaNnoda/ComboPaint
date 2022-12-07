@@ -1,7 +1,7 @@
 import {DocViewer} from "./DocViewer";
 import ComboPaintDocument from "./ComboPaintDocument";
-import {CPLayer} from "./CPLayer";
-import {BackgroundLayer} from "./BackgroundLayer";
+import {CPLayer} from "./Layers/CPLayer";
+import {BackgroundLayer} from "./Layers/BackgroundLayer";
 import {PointerEventHandler} from "./Events/PointerEventHandler";
 
 

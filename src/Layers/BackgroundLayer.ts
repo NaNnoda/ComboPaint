@@ -30,7 +30,5 @@ export class BackgroundLayer extends CPLayer {
             this.ctx.fillStyle = this.fillStyle;
             this.ctx.fillRect(0, 0, this.width, this.height);
         }
-
     }
-
 }

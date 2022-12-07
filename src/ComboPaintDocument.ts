@@ -1,8 +1,10 @@
 import {CanvasWrapper} from "./CanvasWrapper";
-import {CPLayer} from "./CPLayer";
+import {CPLayer} from "./Layers/CPLayer";
 
 export default class ComboPaintDocument extends CanvasWrapper {
     layers: CPLayer[] = [];
+
+    selectedLayer: CPLayer | null = null;
 
     get height() {
         return this.canvas.height;
@@ -28,6 +30,9 @@ export default class ComboPaintDocument extends CanvasWrapper {
 
     addLayer(layer: CPLayer, index: number = this.layers.length) {
         this.layers.splice(index, 0, layer);
+        if (this.selectedLayer == null) {
+            this.selectedLayer = layer;
+        }
     }
 
     render() {

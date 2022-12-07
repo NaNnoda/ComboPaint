@@ -1,0 +1,23 @@
+{
+  "name": "combopaint",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "watch": "esbuild src/Main.ts --bundle --sourcemap --outfile=index.js --watch --format=esm"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NaNnoda/ComboPaint.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NaNnoda/ComboPaint/issues"
+  },
+  "homepage": "https://github.com/NaNnoda/ComboPaint#readme",
+  "devDependencies": {
+    "typescript": "^4.9.3"
+  }
+}

@@ -70,8 +70,11 @@ var Vec2 = class {
       this.y = val2;
     }
   }
+  addXY(x, y) {
+    return new Vec2(this.x + x, this.y + y);
+  }
   add(other) {
-    return new Vec2(this.x + other.x, this.y + other.y);
+    this.addXY(other.x, other.y);
   }
   sub(other) {
     return new Vec2(this.x - other.x, this.y - other.y);
@@ -250,6 +253,47 @@ var PaintToolEventHandler = class extends PointerEventHandler {
   }
 };
 
+// src/Events/ViewerEventsHandler.ts
+var ViewerEventsHandler = class extends EventHandler {
+  constructor(viewer) {
+    super();
+    this.lastMousePoint = null;
+    this.lastPointerPoint = null;
+    this.isMidDragging = false;
+    this.registerEvent("midDrag", this.onMidDrag.bind(this));
+    this.registerEvent("wheel", this.onWheel.bind(this));
+    let canvas = viewer.canvas;
+    canvas.addEventListener("wheel", (e) => {
+      this.triggerEvent("wheel", e);
+    });
+    canvas.addEventListener("mousedown", (e) => {
+      if (e.button === 1) {
+        this.isMidDragging = true;
+        this.lastMousePoint = e;
+      }
+    });
+    canvas.addEventListener("mouseup", (e) => {
+      if (e.button === 1) {
+        this.isMidDragging = false;
+      }
+      this.lastMousePoint = null;
+    });
+    this.pointerEvent = PointerEventHandler.createFromHTMLElement(canvas);
+    this.pointerEvent.registerEvent("raw", this.onRawPointer.bind(this));
+  }
+  onRawPointer(e) {
+    this.lastPointerPoint = e;
+    console.log("raw pointer");
+    if (this.isMidDragging) {
+      this.triggerEvent("midDrag", e);
+    }
+  }
+  onMidDrag(e) {
+  }
+  onWheel(e) {
+  }
+};
+
 // src/DocViewer.ts
 var DocViewer = class extends CanvasWrapper {
   constructor(canvas, doc) {
@@ -264,8 +308,30 @@ var DocViewer = class extends CanvasWrapper {
     this.state.offset = offset;
     this.state.scale = new Vec2(scale);
     this.paintToolEventHandler = new PaintToolEventHandler();
-    this.viewPointerHandler = PointerEventHandler.createFromHTMLElement(this.canvas);
-    this.viewPointerHandler.registerEvent("raw", this.triggerPaintTool.bind(this));
+    this.events = new ViewerEventsHandler(canvas);
+    this.setUpEventHandlers();
+  }
+  setUpEventHandlers() {
+    this.events.registerEvent("rawPointer", this.triggerPaintTool.bind(this));
+    this.events.registerEvent("midDrag", (e) => {
+      let offset = this.state.offset;
+      let lastE = this.events.lastMousePoint;
+      if (lastE === null) {
+        return;
+      }
+      let dx = e.clientX - lastE.clientX;
+      let dy = e.clientY - lastE.clientY;
+      console.log({ dx, dy });
+      this.state.offset = offset.addXY(dx, dy);
+      this.render();
+    });
+    this.events.registerEvent("wheel", (e) => {
+      console.log("Wheel");
+      console.log(e.deltaY);
+      this.relativeZoom(1 - e.deltaY / 1e3);
+      console.log(this.state.scale);
+      this.render();
+    });
   }
   triggerPaintTool(raw) {
     let pos = this.viewToDocCoords(raw.offsetX, raw.offsetY);
@@ -280,7 +346,6 @@ var DocViewer = class extends CanvasWrapper {
     this.ctx.fillRect(0, 0, this.width, this.height);
     this.renderBorder();
     this.renderDoc();
-    console.log("Rendered");
   }
   get state() {
     return this._state;
@@ -293,6 +358,22 @@ var DocViewer = class extends CanvasWrapper {
       (x - this.state.offset.x) / this.state.scale.x,
       (y - this.state.offset.y) / this.state.scale.y
     );
+  }
+  relativeZoom(zoom) {
+    if (this.events.lastPointerPoint === null) {
+      return;
+    }
+    let x = this.events.lastPointerPoint.x;
+    let y = this.events.lastPointerPoint.y;
+    let oldScale = this.state.scale;
+    let newScale = new Vec2(oldScale.x * zoom, oldScale.y * zoom);
+    let oldOffset = this.state.offset;
+    let newOffset = new Vec2(
+      oldOffset.x + (x - oldOffset.x) * (1 - zoom),
+      oldOffset.y + (y - oldOffset.y) * (1 - zoom)
+    );
+    this.state.scale = newScale;
+    this.state.offset = newOffset;
   }
   docToViewCoords(x, y) {
     return new Vec2(
@@ -307,6 +388,20 @@ var DocViewer = class extends CanvasWrapper {
     this.doc.render();
     if (this.state.scale.x > 1 || this.state.scale.y > 1) {
       this.ctx.imageSmoothingEnabled = false;
+      if (this.state.scale.x > 2 || this.state.scale.y > 2) {
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = "black";
+        this.ctx.beginPath();
+        for (let x = 0; x < this.doc.width; x++) {
+          this.ctx.moveTo(x, 0);
+          this.ctx.lineTo(x, this.doc.height);
+        }
+        for (let y = 0; y < this.doc.height; y++) {
+          this.ctx.moveTo(0, y);
+          this.ctx.lineTo(this.doc.width, y);
+        }
+        this.ctx.stroke();
+      }
     } else {
       this.ctx.imageSmoothingEnabled = true;
     }
@@ -369,10 +464,8 @@ var ComboPaintDocument = class extends CanvasWrapper {
   render() {
     this.ctx.clearRect(0, 0, this.width, this.height);
     for (let layer of this.layers) {
-      console.log("Rendering layer " + layer.name);
       if (layer.visible) {
         this.ctx.globalAlpha = layer.opacity;
-        console.log(this.ctx.globalCompositeOperation);
         this.ctx.globalCompositeOperation = layer.blendMode;
         layer.render();
         this.ctx.drawImage(layer.canvas, 0, 0);
@@ -408,7 +501,6 @@ var BackgroundLayer = class extends CPLayer {
   drawCheckerboard(color1, color2, size) {
     this.ctx.fillStyle = color1;
     this.ctx.fillRect(0, 0, this.width, this.height);
-    console.log(this.width);
     this.ctx.fillStyle = color2;
     for (let x = 0; x < this.width; x += size) {
       for (let y = 0; y < this.height; y += size) {
@@ -420,7 +512,6 @@ var BackgroundLayer = class extends CPLayer {
   }
   render() {
     if (this.fillStyle == "checkerboard") {
-      console.log("checkerboard");
       this.drawCheckerboard("#ffffff", "#cbcbcb", 10);
     } else {
       this.ctx.fillStyle = this.fillStyle;
@@ -461,6 +552,7 @@ var PaintTool = class {
   set eventHandler(eventHandler) {
     console.log("Setting event handler");
     this._eventHandler = eventHandler;
+    this._eventHandler.bind(this);
   }
   get canvas() {
     return this.layer.canvas;
@@ -537,7 +629,6 @@ var BasicPen = class extends PaintTool2D {
     super.onPressedMove(point);
     let lastPoint = this.eventHandler.lastPoint;
     if (lastPoint !== null) {
-      console.log("Drawing line from " + lastPoint.x + ", " + lastPoint.y + " to " + point.x + ", " + point.y);
       this.setFillRGB(0, 0, 0);
       this.drawLine(lastPoint.x, lastPoint.y, point.x, point.y);
       this.viewer.render();
@@ -558,7 +649,7 @@ function main() {
   layer1.ctx.stroke();
   let layer2 = new CPLayer(width, height, "red");
   layer2.ctx.fillStyle = "red";
-  layer2.ctx.fillRect(0, 0, width, height);
+  layer2.ctx.fillRect(0, 0, width / 2, 10);
   layer2.opacity = 0.2;
   console.debug("Creating document");
   console.debug("Adding layers");

@@ -2,7 +2,8 @@ import ComboPaintDocument from "./ComboPaintDocument";
 import {CanvasWrapper} from "./CanvasWrapper";
 import {Vec2} from "./MathUtils/Vec2";
 import {PaintToolEventHandler} from "./Events/PaintToolEventHandler";
-import {PointerEventHandler} from "./Events/PointerEventHandler";
+import {PointerEventHandler, PointerPoint} from "./Events/PointerEventHandler";
+import {ViewerEventsHandler} from "./Events/ViewerEventsHandler";
 
 /**
  * Class that renders a ComboPaintDocument to a canvas.
@@ -14,7 +15,7 @@ export class DocViewer extends CanvasWrapper {
     _state: TranslateState;
 
     paintToolEventHandler: PaintToolEventHandler;
-    viewPointerHandler: PointerEventHandler;
+    events: ViewerEventsHandler;
 
     constructor(canvas: HTMLCanvasElement, doc: ComboPaintDocument) {
         super(canvas);
@@ -29,9 +30,34 @@ export class DocViewer extends CanvasWrapper {
         this.state.scale = new Vec2(scale);
 
         this.paintToolEventHandler = new PaintToolEventHandler();
-        this.viewPointerHandler = PointerEventHandler.createFromHTMLElement(this.canvas);
-        this.viewPointerHandler.registerEvent("raw", this.triggerPaintTool.bind(this));
+        this.events = new ViewerEventsHandler(canvas);
+        this.setUpEventHandlers();
 
+    }
+
+    setUpEventHandlers() {
+        this.events.registerEvent("rawPointer", this.triggerPaintTool.bind(this));
+        this.events.registerEvent("midDrag", (e: PointerEvent) => {
+
+            let offset = this.state.offset;
+            let lastE = this.events.lastMousePoint;
+            if (lastE === null) {
+                return;
+            }
+            let dx = e.clientX - lastE.clientX;
+            let dy = e.clientY - lastE.clientY;
+            console.log({dx, dy});
+            this.state.offset = offset.addXY(dx, dy);
+            this.render();
+        });
+        this.events.registerEvent("wheel", (e: WheelEvent) => {
+            // e.preventDefault();
+            console.log("Wheel");
+            console.log(e.deltaY);
+            this.relativeZoom(1 - e.deltaY / 1000);
+            console.log(this.state.scale);
+            this.render();
+        });
     }
 
     triggerPaintTool(raw: PointerEvent) {
@@ -49,11 +75,9 @@ export class DocViewer extends CanvasWrapper {
         // set background color
         this.ctx.fillStyle = "#c4c4c4";
         this.ctx.fillRect(0, 0, this.width, this.height);
-        // this._state.translateToAndSaveCtx(this.ctx);
-
         this.renderBorder();
         this.renderDoc();
-        console.log("Rendered");
+        // console.log("Rendered");
     }
 
     get state() {
@@ -69,6 +93,24 @@ export class DocViewer extends CanvasWrapper {
             (x - this.state.offset.x) / this.state.scale.x,
             (y - this.state.offset.y) / this.state.scale.y
         );
+    }
+
+    relativeZoom(zoom: number) {
+        if (this.events.lastPointerPoint === null) {
+            return;
+        }
+
+        let x = this.events.lastPointerPoint.x;
+        let y = this.events.lastPointerPoint.y;
+        let oldScale = this.state.scale;
+        let newScale = new Vec2(oldScale.x * zoom, oldScale.y * zoom);
+        let oldOffset = this.state.offset;
+        let newOffset = new Vec2(
+            oldOffset.x + (x - oldOffset.x) * (1 - zoom),
+            oldOffset.y + (y - oldOffset.y) * (1 - zoom)
+        );
+        this.state.scale = newScale;
+        this.state.offset = newOffset;
     }
 
     docToViewCoords(x: number, y: number) {
@@ -87,25 +129,25 @@ export class DocViewer extends CanvasWrapper {
         // if scale is bigger than 1, don't use image smoothing
         if (this.state.scale.x > 1 || this.state.scale.y > 1) {
             this.ctx.imageSmoothingEnabled = false;
+            // if scale is bigger than 2, draw a grid
+            if (this.state.scale.x > 2 || this.state.scale.y > 2) {
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeStyle = "black";
+                this.ctx.beginPath();
+                for (let x = 0; x < this.doc.width; x++) {
+                    this.ctx.moveTo(x, 0);
+                    this.ctx.lineTo(x, this.doc.height);
+                }
+                for (let y = 0; y < this.doc.height; y++) {
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(this.doc.width, y);
+                }
+                this.ctx.stroke();
+            }
         } else {
             this.ctx.imageSmoothingEnabled = true;
         }
-        // if (this.state.scale.x > 1) {
-        //     this.ctx.strokeStyle = "black";
-        //     this.ctx.lineWidth = 1;
-        //     for (let i = 0; i < this.doc.width; i++) {
-        //         this.ctx.beginPath();
-        //         this.ctx.moveTo(i, 0);
-        //         this.ctx.lineTo(i, this.doc.height);
-        //         this.ctx.stroke();
-        //     }
-        //     for (let i = 0; i < this.doc.height; i++) {
-        //         this.ctx.beginPath();
-        //         this.ctx.moveTo(0, i);
-        //         this.ctx.lineTo(this.doc.width, i);
-        //         this.ctx.stroke();
-        //     }
-        // }
+
         this.ctx.drawImage(this.doc.canvas, 0, 0);
         this.ctx.restore();
     }
@@ -116,9 +158,9 @@ export class DocViewer extends CanvasWrapper {
         this.ctx.strokeStyle = "black";
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(
-            this.state.offset.x ,
+            this.state.offset.x,
             this.state.offset.y + 1,
-            this.doc.width * this.state.scale.x ,
+            this.doc.width * this.state.scale.x,
             this.doc.height * this.state.scale.y + 1
         );
         this.ctx.restore();

@@ -10,10 +10,13 @@ export class Vec2 {
             this.y = val2;
         }
     }
-
-    add(other: Vec2) {
-        return new Vec2(this.x + other.x, this.y + other.y);
+    addXY(x: number, y: number) {
+        return new Vec2(this.x + x, this.y + y);
     }
+    add(other: Vec2) {
+        this.addXY(other.x, other.y);
+    }
+
 
     sub(other: Vec2) {
         return new Vec2(this.x - other.x, this.y - other.y);

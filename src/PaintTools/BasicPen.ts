@@ -8,7 +8,7 @@ export class BasicPen extends PaintTool2D {
         let lastPoint = this.eventHandler.lastPoint;
 
         if (lastPoint !== null) {
-            console.log("Drawing line from " + lastPoint.x + ", " + lastPoint.y + " to " + point.x + ", " + point.y);
+            // console.log("Drawing line from " + lastPoint.x + ", " + lastPoint.y + " to " + point.x + ", " + point.y);
             this.setFillRGB(0, 0, 0);
             this.drawLine(lastPoint.x, lastPoint.y, point.x, point.y);
             this.viewer.render();

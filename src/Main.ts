@@ -19,7 +19,7 @@ function main() {
     layer1.ctx.stroke();
     let layer2 = new CPLayer(width, height, "red");
     layer2.ctx.fillStyle = "red";
-    layer2.ctx.fillRect(0, 0, width, height);
+    layer2.ctx.fillRect(0, 0, width/2, 10);
     layer2.opacity = 0.2;
 
     console.debug("Creating document");
@@ -48,6 +48,7 @@ function main() {
     pen.viewer = docViewer;
 
     pen.eventHandler = docViewer.paintToolEventHandler;
+
     docViewer.render();
 }
 

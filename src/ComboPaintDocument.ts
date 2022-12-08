@@ -44,11 +44,11 @@ export default class ComboPaintDocument extends CanvasWrapper {
     render() {
         this.ctx.clearRect(0, 0, this.width, this.height);
         for (let layer of this.layers) {
-            console.log("Rendering layer " + layer.name);
+            // console.log("Rendering layer " + layer.name);
             if (layer.visible) {
 
                 this.ctx.globalAlpha = layer.opacity;
-                console.log(this.ctx.globalCompositeOperation);
+                // console.log(this.ctx.globalCompositeOperation);
                 this.ctx.globalCompositeOperation = layer.blendMode;
                 layer.render();
                 this.ctx.drawImage(layer.canvas, 0, 0);

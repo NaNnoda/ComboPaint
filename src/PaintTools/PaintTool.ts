@@ -36,6 +36,7 @@ export class PaintTool {
     set eventHandler(eventHandler: PaintToolEventHandler) {
         console.log("Setting event handler");
         this._eventHandler = eventHandler;
+        this._eventHandler.bind(this);
     }
 
     get canvas() {
@@ -69,8 +70,6 @@ export class PaintTool {
             name = this.constructor.name;
         }
         this.name = name;
-        // this.eventHandler = eventHandler;
-        // this.eventHandler.bind(this);
     }
 
     static createFromStandardDoc(eventHandler: PaintToolEventHandler, doc: ComboPaintDocument, viewer: DocViewer) {

@@ -315,13 +315,13 @@ var DocViewer = class extends CanvasWrapper {
   }
   renderBorder() {
     this.ctx.save();
-    this.ctx.filter = "blur(2px)";
+    this.ctx.filter = "blur(4px)";
     this.ctx.strokeStyle = "black";
-    this.ctx.lineWidth = 1;
+    this.ctx.lineWidth = 2;
     this.ctx.strokeRect(
-      this.state.offset.x - 1,
-      this.state.offset.y - 1,
-      this.doc.width * this.state.scale.x + 1,
+      this.state.offset.x,
+      this.state.offset.y + 1,
+      this.doc.width * this.state.scale.x,
       this.doc.height * this.state.scale.y + 1
     );
     this.ctx.restore();

@@ -1,19 +1,20 @@
 import ComboPaintDocument from "./ComboPaintDocument";
 import {CanvasWrapper} from "./CanvasWrapper";
 import {Vec2} from "./MathUtils/Vec2";
+import {PaintToolEventHandler} from "./Events/PaintToolEventHandler";
+import {PointerEventHandler} from "./Events/PointerEventHandler";
 
+/**
+ * Class that renders a ComboPaintDocument to a canvas.
+ * and also handles user input.
+ */
 export class DocViewer extends CanvasWrapper {
     _doc: ComboPaintDocument;
 
     _state: TranslateState;
 
-    get state() {
-        return this._state;
-    }
-
-    get doc() {
-        return this._doc;
-    }
+    paintToolEventHandler: PaintToolEventHandler;
+    viewPointerHandler: PointerEventHandler;
 
     constructor(canvas: HTMLCanvasElement, doc: ComboPaintDocument) {
         super(canvas);
@@ -27,7 +28,18 @@ export class DocViewer extends CanvasWrapper {
         offset.y = (this.height) / 2 - this.doc.height / 2 * scale;
         this.state.offset = offset;
         this.state.scale = new Vec2(scale);
+
+        this.paintToolEventHandler = new PaintToolEventHandler();
+        this.viewPointerHandler = PointerEventHandler.createFromHTMLElement(this.canvas);
+        this.viewPointerHandler.registerEvent("raw", this.triggerPaintTool.bind(this));
+
     }
+
+    triggerPaintTool(raw: PointerEvent) {
+        let pos = this.viewToDocCoords(raw.offsetX, raw.offsetY);
+        this.paintToolEventHandler.triggerEvent("raw", raw, pos);
+    }
+
 
     setDocument(doc: ComboPaintDocument) {
         this._doc = doc;
@@ -44,10 +56,33 @@ export class DocViewer extends CanvasWrapper {
         console.log("Rendered");
     }
 
+    get state() {
+        return this._state;
+    }
+
+    get doc() {
+        return this._doc;
+    }
+
+    viewToDocCoords(x: number, y: number) {
+        return new Vec2(
+            (x - this.state.offset.x) / this.state.scale.x,
+            (y - this.state.offset.y) / this.state.scale.y
+        );
+    }
+
+    docToViewCoords(x: number, y: number) {
+        return new Vec2(
+            x * this.state.scale.x + this.state.offset.x,
+            y * this.state.scale.y + this.state.offset.y
+        );
+    }
+
     renderDoc() {
         this.ctx.save();
         this.ctx.translate(this.state.offset.x, this.state.offset.y);
         this.ctx.scale(this.state.scale.x, this.state.scale.y);
+        this.doc.render();
         this.ctx.drawImage(this.doc.canvas, 0, 0);
         this.ctx.restore();
     }

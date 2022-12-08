@@ -1,31 +1,21 @@
 import {CPLayer} from "../Layers/CPLayer";
-import {PointerEventHandler} from "../Events/PointerEventHandler";
+import {PointerEventHandler, PointerPoint} from "../Events/PointerEventHandler";
 import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {PaintTool} from "./PaintTool";
 
 export class PaintTool2D extends PaintTool {
 
 
-    _layer: CPLayer | null = null;
-
-
-    setLayer(layer: CPLayer) {
-        this._layer = layer;
-    }
-
-    get layer() {
-        if (this._layer === null) {
-            throw new Error("Layer not set");
-        }
-        return this._layer;
-    }
-
     get ctx() {
         return this.layer.ctx;
     }
 
-    get canvas() {
-        return this.layer.canvas;
+    setFillStyle(style: string) {
+        this.ctx.fillStyle = style;
+    }
+
+    setFillRGB(r: number, g: number, b: number) {
+        this.setFillStyle(`rgb(${r}, ${g}, ${b})`);
     }
 
     drawLine(x1: number, y1: number, x2: number, y2: number) {
@@ -33,6 +23,10 @@ export class PaintTool2D extends PaintTool {
         this.ctx.moveTo(x1, y1);
         this.ctx.lineTo(x2, y2);
         this.ctx.stroke();
+    }
+
+    drawLineFromPoint(p1: PointerPoint, p2: PointerPoint) {
+        this.drawLine(p1.x, p1.y, p2.x, p2.y);
     }
 
     drawCircle(x: number, y: number, radius: number) {

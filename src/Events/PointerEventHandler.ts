@@ -1,12 +1,11 @@
 import EventHandler from "./EventHandler";
 import {Vec2} from "../MathUtils/Vec2";
 
-export type PointerEventKeys = "any" | "down" | "up" | "move" | "leave" | "enter";
+export type PointerEventKeys = "raw" | "down" | "up" | "move" | "leave" | "enter" | "pressedMove" | "last";
 
 export class PointerPoint {
     pos: Vec2;
     pressure: number;
-    pointType: PointerEventKeys = "any";
 
     constructor(pos: Vec2, pressure: number) {
         this.pos = pos;
@@ -16,17 +15,30 @@ export class PointerPoint {
     static pointerEventToPointerPoint(e: PointerEvent): PointerPoint {
         return new PointerPoint(new Vec2(e.offsetX, e.offsetY), e.pressure);
     }
+
+    get x() {
+        return this.pos.x;
+    }
+
+    get y() {
+        return this.pos.y;
+    }
 }
 
 export class PointerEventHandler extends EventHandler<PointerEventKeys> {
     constructor() {
         super();
         console.log("PointerEventHandler created");
-        this.registerEvent("any", this.onAny.bind(this));
+        this.registerEvent("raw", this.onRaw.bind(this));
     }
 
-    static bindWithElement(element: HTMLElement) {
+    static createFromHTMLElement(element: HTMLElement) {
         let handler = new PointerEventHandler();
+        PointerEventHandler.bindWithElement(handler, element);
+        return handler;
+    }
+
+    static bindWithElement(handler: PointerEventHandler, element: HTMLElement) {
         element.addEventListener("pointerdown", handler.rawPointerEvent.bind(handler));
         element.addEventListener("pointerup", handler.rawPointerEvent.bind(handler));
         element.addEventListener("pointermove", handler.rawPointerEvent.bind(handler));
@@ -35,19 +47,46 @@ export class PointerEventHandler extends EventHandler<PointerEventKeys> {
         element.addEventListener("pointerover", handler.rawPointerEvent.bind(handler));
         element.addEventListener("pointerout", handler.rawPointerEvent.bind(handler));
         element.addEventListener("pointercancel", handler.rawPointerEvent.bind(handler));
-        return handler;
     }
+
+    wasDown: boolean = false;
+    lastPoint: PointerPoint | null = null;
 
     rawPointerEvent(rawEvent: PointerEvent) {
-        let point = PointerPoint.pointerEventToPointerPoint(rawEvent);
-        this.triggerEvent("any", point);
+        this.triggerEvent("raw", rawEvent);
     }
 
-    onAny(point: PointerPoint) {
-        console.log(
-            {
-                x: point.pos.x, y: point.pos.y
-            });
+    onRaw(rawEvent: PointerEvent, customPos: Vec2|null = null) {
+        let point = PointerPoint.pointerEventToPointerPoint(rawEvent);
+        if (customPos !== null) {
+            point.pos = customPos;
+        }
+
+
+        switch (rawEvent.type) {
+            case "pointerdown":
+                this.triggerEvent("down", point);
+                this.wasDown = true;
+                break;
+            case "pointerup":
+                this.triggerEvent("up", point);
+                this.wasDown = false;
+                break;
+            case "pointermove":
+                this.triggerEvent("move", point);
+                if (this.wasDown) {
+                    this.triggerEvent("pressedMove", point);
+                }
+                break;
+            case "pointerenter":
+                this.triggerEvent("enter", point);
+                break;
+            case "pointerleave":
+                this.triggerEvent("leave", point);
+                this.wasDown = false;
+                break;
+        }
+        this.lastPoint = point;
     }
 }
 

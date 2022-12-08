@@ -35,10 +35,18 @@ export default class ComboPaintDocument extends CanvasWrapper {
         }
     }
 
+    addLayers(...layers: CPLayer[]) {
+        for (let layer of layers) {
+            this.addLayer(layer);
+        }
+    }
+
     render() {
         this.ctx.clearRect(0, 0, this.width, this.height);
         for (let layer of this.layers) {
+            console.log("Rendering layer " + layer.name);
             if (layer.visible) {
+
                 this.ctx.globalAlpha = layer.opacity;
                 console.log(this.ctx.globalCompositeOperation);
                 this.ctx.globalCompositeOperation = layer.blendMode;

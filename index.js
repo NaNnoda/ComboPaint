@@ -107,6 +107,149 @@ var Vec2 = class {
   }
 };
 
+// src/Events/EventHandler.ts
+var EventHandler = class {
+  constructor() {
+    this.events = {};
+  }
+  registerEvent(event, callback) {
+    if (this.events[event] === void 0) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  }
+  triggerEvent(event, ...args) {
+    if (this.events[event] !== void 0) {
+      for (let callback of this.events[event]) {
+        callback(...args);
+      }
+    }
+  }
+  removeEvent(event) {
+    delete this.events[event];
+  }
+  removeCallback(event, callback) {
+    if (this.events[event] !== void 0) {
+      this.events[event] = this.events[event].filter((value) => {
+        return value !== callback;
+      });
+    }
+  }
+  removeAllEvents() {
+    this.events = {};
+  }
+};
+
+// src/Events/PointerEventHandler.ts
+var PointerPoint = class {
+  constructor(pos, pressure) {
+    this.pos = pos;
+    this.pressure = pressure;
+  }
+  static pointerEventToPointerPoint(e) {
+    return new PointerPoint(new Vec2(e.offsetX, e.offsetY), e.pressure);
+  }
+  get x() {
+    return this.pos.x;
+  }
+  get y() {
+    return this.pos.y;
+  }
+};
+var PointerEventHandler = class extends EventHandler {
+  constructor() {
+    super();
+    this.wasDown = false;
+    this.lastPoint = null;
+    console.log("PointerEventHandler created");
+    this.registerEvent("raw", this.onRaw.bind(this));
+  }
+  static createFromHTMLElement(element) {
+    let handler = new PointerEventHandler();
+    PointerEventHandler.bindWithElement(handler, element);
+    return handler;
+  }
+  static bindWithElement(handler, element) {
+    element.addEventListener("pointerdown", handler.rawPointerEvent.bind(handler));
+    element.addEventListener("pointerup", handler.rawPointerEvent.bind(handler));
+    element.addEventListener("pointermove", handler.rawPointerEvent.bind(handler));
+    element.addEventListener("pointerenter", handler.rawPointerEvent.bind(handler));
+    element.addEventListener("pointerleave", handler.rawPointerEvent.bind(handler));
+    element.addEventListener("pointerover", handler.rawPointerEvent.bind(handler));
+    element.addEventListener("pointerout", handler.rawPointerEvent.bind(handler));
+    element.addEventListener("pointercancel", handler.rawPointerEvent.bind(handler));
+  }
+  rawPointerEvent(rawEvent) {
+    this.triggerEvent("raw", rawEvent);
+  }
+  onRaw(rawEvent, customPos = null) {
+    let point = PointerPoint.pointerEventToPointerPoint(rawEvent);
+    if (customPos !== null) {
+      point.pos = customPos;
+    }
+    switch (rawEvent.type) {
+      case "pointerdown":
+        this.triggerEvent("down", point);
+        this.wasDown = true;
+        break;
+      case "pointerup":
+        this.triggerEvent("up", point);
+        this.wasDown = false;
+        break;
+      case "pointermove":
+        this.triggerEvent("move", point);
+        if (this.wasDown) {
+          this.triggerEvent("pressedMove", point);
+        }
+        break;
+      case "pointerenter":
+        this.triggerEvent("enter", point);
+        break;
+      case "pointerleave":
+        this.triggerEvent("leave", point);
+        this.wasDown = false;
+        break;
+    }
+    this.lastPoint = point;
+  }
+};
+
+// src/Events/PaintToolEventHandler.ts
+var PaintToolEventHandler = class extends PointerEventHandler {
+  constructor() {
+    super();
+    this._tool = null;
+  }
+  get tool() {
+    if (this._tool === null) {
+      throw new Error("Tool not set");
+    }
+    return this._tool;
+  }
+  set tool(tool) {
+    this._tool = tool;
+  }
+  bind(tool) {
+    this.tool = tool;
+    this.registerEvent("down", this.onDown.bind(this));
+    this.registerEvent("up", this.onUp.bind(this));
+    this.registerEvent("pressedMove", this.onPressedMove.bind(this));
+    this.registerEvent("move", this.onMove.bind(this));
+  }
+  onDown(point) {
+    this.tool.onDown(point);
+  }
+  onUp(point) {
+    this.tool.onUp(point);
+  }
+  onPressedMove(point) {
+    this.tool.onPressedMove(point);
+  }
+  onMove(point) {
+    this.tool.onMove(point);
+  }
+};
+
 // src/DocViewer.ts
 var DocViewer = class extends CanvasWrapper {
   constructor(canvas, doc) {
@@ -120,12 +263,13 @@ var DocViewer = class extends CanvasWrapper {
     offset.y = this.height / 2 - this.doc.height / 2 * scale;
     this.state.offset = offset;
     this.state.scale = new Vec2(scale);
+    this.paintToolEventHandler = new PaintToolEventHandler();
+    this.viewPointerHandler = PointerEventHandler.createFromHTMLElement(this.canvas);
+    this.viewPointerHandler.registerEvent("raw", this.triggerPaintTool.bind(this));
   }
-  get state() {
-    return this._state;
-  }
-  get doc() {
-    return this._doc;
+  triggerPaintTool(raw) {
+    let pos = this.viewToDocCoords(raw.offsetX, raw.offsetY);
+    this.paintToolEventHandler.triggerEvent("raw", raw, pos);
   }
   setDocument(doc) {
     this._doc = doc;
@@ -138,10 +282,29 @@ var DocViewer = class extends CanvasWrapper {
     this.renderBorder();
     console.log("Rendered");
   }
+  get state() {
+    return this._state;
+  }
+  get doc() {
+    return this._doc;
+  }
+  viewToDocCoords(x, y) {
+    return new Vec2(
+      (x - this.state.offset.x) / this.state.scale.x,
+      (y - this.state.offset.y) / this.state.scale.y
+    );
+  }
+  docToViewCoords(x, y) {
+    return new Vec2(
+      x * this.state.scale.x + this.state.offset.x,
+      y * this.state.scale.y + this.state.offset.y
+    );
+  }
   renderDoc() {
     this.ctx.save();
     this.ctx.translate(this.state.offset.x, this.state.offset.y);
     this.ctx.scale(this.state.scale.x, this.state.scale.y);
+    this.doc.render();
     this.ctx.drawImage(this.doc.canvas, 0, 0);
     this.ctx.restore();
   }
@@ -190,9 +353,15 @@ var ComboPaintDocument = class extends CanvasWrapper {
       this.selectedLayer = layer;
     }
   }
+  addLayers(...layers) {
+    for (let layer of layers) {
+      this.addLayer(layer);
+    }
+  }
   render() {
     this.ctx.clearRect(0, 0, this.width, this.height);
     for (let layer of this.layers) {
+      console.log("Rendering layer " + layer.name);
       if (layer.visible) {
         this.ctx.globalAlpha = layer.opacity;
         console.log(this.ctx.globalCompositeOperation);
@@ -252,79 +421,119 @@ var BackgroundLayer = class extends CPLayer {
   }
 };
 
-// src/Events/EventHandler.ts
-var EventHandler = class {
-  constructor() {
-    this.events = {};
-  }
-  registerEvent(event, callback) {
-    if (this.events[event] === void 0) {
-      this.events[event] = [];
+// src/PaintTools/PaintTool.ts
+var PaintTool = class {
+  constructor(eventHandler = null, name = null) {
+    this._eventHandler = null;
+    this.selectedLayer = null;
+    this._layer = null;
+    this._doc = null;
+    this._viewer = null;
+    if (name === null) {
+      name = this.constructor.name;
     }
-    this.events[event].push(callback);
+    this.name = name;
   }
-  triggerEvent(event, ...args) {
-    if (this.events[event] !== void 0) {
-      for (let callback of this.events[event]) {
-        callback(...args);
-      }
+  setLayer(layer) {
+    console.debug("Setting layer to " + layer.name);
+    this._layer = layer;
+  }
+  get layer() {
+    if (this._layer === null) {
+      throw new Error("Layer not set");
     }
+    return this._layer;
   }
-  removeEvent(event) {
-    delete this.events[event];
-  }
-  removeCallback(event, callback) {
-    if (this.events[event] !== void 0) {
-      this.events[event] = this.events[event].filter((value) => {
-        return value !== callback;
-      });
+  get eventHandler() {
+    if (this._eventHandler === null) {
+      throw new Error("Event handler not set");
     }
+    return this._eventHandler;
   }
-  removeAllEvents() {
-    this.events = {};
+  set eventHandler(eventHandler) {
+    console.log("Setting event handler");
+    this._eventHandler = eventHandler;
+  }
+  get canvas() {
+    return this.layer.canvas;
+  }
+  get doc() {
+    if (this._doc === null) {
+      throw new Error("Doc not set");
+    }
+    return this._doc;
+  }
+  set doc(doc) {
+    this._doc = doc;
+  }
+  get viewer() {
+    if (this._viewer === null) {
+      throw new Error("Viewer not set");
+    }
+    return this._viewer;
+  }
+  set viewer(viewer) {
+    this._viewer = viewer;
+  }
+  static createFromStandardDoc(eventHandler, doc, viewer) {
+    let tool = new this(eventHandler);
+    tool.doc = doc;
+    tool.viewer = viewer;
+    tool.eventHandler = viewer.paintToolEventHandler;
+    return tool;
+  }
+  onDown(point) {
+    console.log("Down");
+  }
+  onUp(point) {
+    console.log("Up");
+  }
+  onPressedMove(point) {
+    console.log("PressedMove");
+  }
+  onMove(point) {
+    console.log("Move");
   }
 };
 
-// src/Events/PointerEventHandler.ts
-var PointerPoint = class {
-  constructor(pos, pressure) {
-    this.pointType = "any";
-    this.pos = pos;
-    this.pressure = pressure;
+// src/PaintTools/PaintTool2D.ts
+var PaintTool2D = class extends PaintTool {
+  get ctx() {
+    return this.layer.ctx;
   }
-  static pointerEventToPointerPoint(e) {
-    return new PointerPoint(new Vec2(e.offsetX, e.offsetY), e.pressure);
+  setFillStyle(style) {
+    this.ctx.fillStyle = style;
+  }
+  setFillRGB(r, g, b) {
+    this.setFillStyle(`rgb(${r}, ${g}, ${b})`);
+  }
+  drawLine(x1, y1, x2, y2) {
+    this.ctx.beginPath();
+    this.ctx.moveTo(x1, y1);
+    this.ctx.lineTo(x2, y2);
+    this.ctx.stroke();
+  }
+  drawLineFromPoint(p1, p2) {
+    this.drawLine(p1.x, p1.y, p2.x, p2.y);
+  }
+  drawCircle(x, y, radius) {
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
+    this.ctx.stroke();
   }
 };
-var PointerEventHandler = class extends EventHandler {
-  constructor() {
-    super();
-    console.log("PointerEventHandler created");
-    this.registerEvent("any", this.onAny.bind(this));
-  }
-  static bindWithElement(element) {
-    let handler = new PointerEventHandler();
-    element.addEventListener("pointerdown", handler.rawPointerEvent.bind(handler));
-    element.addEventListener("pointerup", handler.rawPointerEvent.bind(handler));
-    element.addEventListener("pointermove", handler.rawPointerEvent.bind(handler));
-    element.addEventListener("pointerenter", handler.rawPointerEvent.bind(handler));
-    element.addEventListener("pointerleave", handler.rawPointerEvent.bind(handler));
-    element.addEventListener("pointerover", handler.rawPointerEvent.bind(handler));
-    element.addEventListener("pointerout", handler.rawPointerEvent.bind(handler));
-    element.addEventListener("pointercancel", handler.rawPointerEvent.bind(handler));
-    return handler;
-  }
-  rawPointerEvent(rawEvent) {
-    let point = PointerPoint.pointerEventToPointerPoint(rawEvent);
-    this.triggerEvent("any", point);
-  }
-  onAny(point) {
-    console.log(
-      {
-        x: point.pos.x,
-        y: point.pos.y
-      }
-    );
+
+// src/PaintTools/BasicPen.ts
+var BasicPen = class extends PaintTool2D {
+  onPressedMove(point) {
+    super.onPressedMove(point);
+    let lastPoint = this.eventHandler.lastPoint;
+    if (lastPoint !== null) {
+      console.log("Drawing line from " + lastPoint.x + ", " + lastPoint.y + " to " + point.x + ", " + point.y);
+      this.setFillRGB(0, 0, 0);
+      this.drawLine(lastPoint.x, lastPoint.y, point.x, point.y);
+      this.viewer.render();
+    }
   }
 };
 
@@ -334,24 +543,30 @@ function main() {
   let width = 100;
   let height = 100;
   let layer0 = new BackgroundLayer(width, height, "checkerboard");
-  let layer1 = new CPLayer(width, height);
+  let layer1 = new CPLayer(width, height, "Layer 1");
   layer1.ctx.strokeStyle = "black";
   layer1.ctx.moveTo(10, 10);
   layer1.ctx.lineTo(width - 10, height - 10);
   layer1.ctx.stroke();
-  let layer2 = new CPLayer(width, height);
+  let layer2 = new CPLayer(width, height, "red");
   layer2.ctx.fillStyle = "red";
   layer2.ctx.fillRect(0, 0, width, height);
   layer2.opacity = 0.2;
   console.debug("Creating document");
   console.debug("Adding layers");
-  let pointerHandler = PointerEventHandler.bindWithElement(viewCanvas);
+  let paintToolEventHandler = new PaintToolEventHandler();
+  PointerEventHandler.bindWithElement(paintToolEventHandler, viewCanvas);
+  let pen = new BasicPen();
+  pen.setLayer(layer1);
   let doc = new ComboPaintDocument(width, height);
   doc.addLayer(layer0);
   doc.addLayer(layer1);
   doc.addLayer(layer2);
   doc.render();
   let docViewer = new DocViewer(viewCanvas, doc);
+  pen.doc = doc;
+  pen.viewer = docViewer;
+  pen.eventHandler = docViewer.paintToolEventHandler;
   docViewer.render();
 }
 main();

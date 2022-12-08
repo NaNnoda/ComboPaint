@@ -6,6 +6,4 @@ export class DocEditor {
     constructor(doc: ComboPaintDocument) {
         this.doc = doc;
     }
-
-
 }

@@ -22,8 +22,7 @@ export class DocViewer extends CanvasWrapper {
         this.setDocument(doc);
         this._state = new TranslateState();
         let offset = new Vec2(0, 0);
-        // center the canvas
-        let scale = 2;
+        let scale = 3;
         offset.x = (this.width) / 2 - this.doc.width / 2 * scale;
         offset.y = (this.height) / 2 - this.doc.height / 2 * scale;
         this.state.offset = offset;
@@ -51,8 +50,9 @@ export class DocViewer extends CanvasWrapper {
         this.ctx.fillStyle = "#c4c4c4";
         this.ctx.fillRect(0, 0, this.width, this.height);
         // this._state.translateToAndSaveCtx(this.ctx);
-        this.renderDoc();
+
         this.renderBorder();
+        this.renderDoc();
         console.log("Rendered");
     }
 
@@ -83,18 +83,44 @@ export class DocViewer extends CanvasWrapper {
         this.ctx.translate(this.state.offset.x, this.state.offset.y);
         this.ctx.scale(this.state.scale.x, this.state.scale.y);
         this.doc.render();
+
+        // if scale is bigger than 1, don't use image smoothing
+        if (this.state.scale.x > 1 || this.state.scale.y > 1) {
+            this.ctx.imageSmoothingEnabled = false;
+        } else {
+            this.ctx.imageSmoothingEnabled = true;
+        }
+        // if (this.state.scale.x > 1) {
+        //     this.ctx.strokeStyle = "black";
+        //     this.ctx.lineWidth = 1;
+        //     for (let i = 0; i < this.doc.width; i++) {
+        //         this.ctx.beginPath();
+        //         this.ctx.moveTo(i, 0);
+        //         this.ctx.lineTo(i, this.doc.height);
+        //         this.ctx.stroke();
+        //     }
+        //     for (let i = 0; i < this.doc.height; i++) {
+        //         this.ctx.beginPath();
+        //         this.ctx.moveTo(0, i);
+        //         this.ctx.lineTo(this.doc.width, i);
+        //         this.ctx.stroke();
+        //     }
+        // }
         this.ctx.drawImage(this.doc.canvas, 0, 0);
         this.ctx.restore();
     }
 
     renderBorder() {
+        this.ctx.save();
+        this.ctx.filter = "blur(2px)";
         this.ctx.strokeStyle = "black";
         this.ctx.lineWidth = 1;
         this.ctx.strokeRect(
-            this.state.offset.x, this.state.offset.y,
-            this.doc.width * this.state.scale.x,
-            this.doc.height * this.state.scale.y
+            this.state.offset.x - 1, this.state.offset.y - 1,
+            this.doc.width * this.state.scale.x + 1,
+            this.doc.height * this.state.scale.y + 1
         );
+        this.ctx.restore();
     }
 }
 

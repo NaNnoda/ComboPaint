@@ -30,13 +30,11 @@ export class DocViewer extends CanvasWrapper {
         this.state.scale = new Vec2(scale);
 
         this.paintToolEventHandler = new PaintToolEventHandler();
-        this.events = new ViewerEventsHandler(canvas);
+        this.events = new ViewerEventsHandler(this);
         this.setUpEventHandlers();
-
     }
 
     setUpEventHandlers() {
-        this.events.registerEvent("rawPointer", this.triggerPaintTool.bind(this));
         this.events.registerEvent("midDrag", (e: PointerEvent) => {
 
             let offset = this.state.offset;
@@ -60,11 +58,6 @@ export class DocViewer extends CanvasWrapper {
         });
     }
 
-    triggerPaintTool(raw: PointerEvent) {
-        let pos = this.viewToDocCoords(raw.offsetX, raw.offsetY);
-        this.paintToolEventHandler.triggerEvent("raw", raw, pos);
-    }
-
 
     setDocument(doc: ComboPaintDocument) {
         this._doc = doc;
@@ -77,7 +70,6 @@ export class DocViewer extends CanvasWrapper {
         this.ctx.fillRect(0, 0, this.width, this.height);
         this.renderBorder();
         this.renderDoc();
-        // console.log("Rendered");
     }
 
     get state() {
@@ -98,6 +90,14 @@ export class DocViewer extends CanvasWrapper {
     relativeZoom(zoom: number) {
         if (this.events.lastPointerPoint === null) {
             return;
+        }
+
+        if (this.state.scale.x>100){
+            if (zoom>1){
+                console.log("Too big");
+                return;
+            }
+
         }
 
         let x = this.events.lastPointerPoint.x;
@@ -145,6 +145,7 @@ export class DocViewer extends CanvasWrapper {
                 this.ctx.stroke();
             }
         } else {
+            // if scale is smaller than 1, make the image use antialiasing
             this.ctx.imageSmoothingEnabled = true;
         }
 

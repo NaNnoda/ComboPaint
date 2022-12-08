@@ -11,6 +11,8 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
 
     pointerEvent: PointerEventHandler;
 
+    viewer: DocViewer;
+
     constructor(viewer: DocViewer) {
         super();
         this.registerEvent("midDrag", this.onMidDrag.bind(this));
@@ -31,23 +33,30 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
             }
             this.lastMousePoint = null;
         });
-        // canvas.addEventListener("mousemove", (e) => {
-        //     console.log({x: e.offsetX, y: e.offsetY});
-        //     if (this.isMidDragging) {
-        //         this.triggerEvent("midDrag", e);
-        //     }
-        // });
+        canvas.addEventListener("mousemove", (e) => {
+            console.log({x: e.offsetX, y: e.offsetY});
+            if (this.isMidDragging) {
+                this.triggerEvent("midDrag", e);
+            }
+            this.lastMousePoint = e;
+        });
         this.pointerEvent = PointerEventHandler.createFromHTMLElement(canvas);
         this.pointerEvent.registerEvent("raw", this.onRawPointer.bind(this));
+
+        this.viewer = viewer;
     }
 
     onRawPointer(e: PointerEvent) {
         this.lastPointerPoint = e;
         console.log("raw pointer");
 
-        if (this.isMidDragging) {
-            this.triggerEvent("midDrag", e);
-        }
+        let pos = this.viewer.viewToDocCoords(e.offsetX, e.offsetY);
+
+        this.viewer.paintToolEventHandler.triggerEvent("raw", e, pos);
+
+        // if (this.isMidDragging) {
+        //     this.triggerEvent("midDrag", e);
+        // }
     }
 
     onMidDrag(e: MouseEvent) {

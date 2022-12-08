@@ -9,14 +9,16 @@ import {PaintToolEventHandler} from "./Events/PaintToolEventHandler";
 
 function main() {
     let viewCanvas = document.getElementById("viewCanvas") as HTMLCanvasElement;
-    let width = 100;
-    let height = 100;
+    viewCanvas.width = 800;
+    viewCanvas.height = 600;
+    let width = 3000;
+    let height = 2000;
     let layer0 = new BackgroundLayer(width, height, "checkerboard");
     let layer1 = new CPLayer(width, height, "Layer 1");
-    layer1.ctx.strokeStyle = "black";
-    layer1.ctx.moveTo(10, 10);
-    layer1.ctx.lineTo(width - 10, height - 10);
-    layer1.ctx.stroke();
+    // layer1.ctx.strokeStyle = "black";
+    // layer1.ctx.moveTo(10, 10);
+    // layer1.ctx.lineTo(width - 10, height - 10);
+    // layer1.ctx.stroke();
     let layer2 = new CPLayer(width, height, "red");
     layer2.ctx.fillStyle = "red";
     layer2.ctx.fillRect(0, 0, width/2, 10);

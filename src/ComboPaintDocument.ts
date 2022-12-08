@@ -22,7 +22,7 @@ export default class ComboPaintDocument extends CanvasWrapper {
         this.canvas.width = width;
     }
 
-    constructor(height: number = 100, width: number = 100) {
+    constructor(width: number = 100, height: number = 100) {
         super();
         this.width = width;
         this.height = height;

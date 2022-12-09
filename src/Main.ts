@@ -60,7 +60,7 @@ function main() {
         a.click();
     });
 
-    DocExporter.docToPSD(doc);
+    // DocExporter.docToPSD(doc);
 
 }
 

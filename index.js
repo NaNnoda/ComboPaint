@@ -13137,9 +13137,15 @@ var DocViewer = class extends CanvasWrapper {
       this.render();
     });
     this.events.registerEvent("wheel", (e) => {
-      console.log("Wheel");
-      console.log(e.deltaY);
-      this.relativeZoom(1 - e.deltaY / 1e3);
+      let isTouchPad = e.deltaMode === 1;
+      console.log(e.deltaMode);
+      if (isTouchPad) {
+        this.offsetCanvas(0, e.deltaY);
+        this.offsetCanvas(e.deltaX, 0);
+        return;
+      }
+      console.log("not touchpad");
+      this.zoomRelativeToMouse(1 - e.deltaY / 1e3);
       console.log(this.state.scale);
       this.render();
     });
@@ -13151,8 +13157,9 @@ var DocViewer = class extends CanvasWrapper {
     console.log("Rendering");
     this.ctx.fillStyle = "#c4c4c4";
     this.ctx.fillRect(0, 0, this.width, this.height);
-    this.renderBorder();
+    this.renderBackground();
     this.renderDoc();
+    this.renderForeground();
   }
   get state() {
     return this._state;
@@ -13166,18 +13173,23 @@ var DocViewer = class extends CanvasWrapper {
       (y - this.state.offset.y) / this.state.scale.y
     );
   }
-  relativeZoom(zoom) {
+  zoomRelativeToMouse(zoom) {
     if (this.events.lastPointerPoint === null) {
       return;
     }
+    let x = this.events.lastPointerPoint.x;
+    let y = this.events.lastPointerPoint.y;
+    this.relativeZoom(x, y, zoom);
+  }
+  offsetCanvas(x, y) {
+    this.state.offset = this.state.offset.addXY(x, y);
+  }
+  relativeZoom(x, y, zoom) {
     if (this.state.scale.x > 100) {
       if (zoom > 1) {
-        console.log("Too big");
         return;
       }
     }
-    let x = this.events.lastPointerPoint.x;
-    let y = this.events.lastPointerPoint.y;
     let oldScale = this.state.scale;
     let newScale = new Vec2(oldScale.x * zoom, oldScale.y * zoom);
     let oldOffset = this.state.offset;
@@ -13187,6 +13199,9 @@ var DocViewer = class extends CanvasWrapper {
     );
     this.state.scale = newScale;
     this.state.offset = newOffset;
+  }
+  get mousePos() {
+    return this.events.lastMousePoint;
   }
   docToViewCoords(x, y) {
     return new Vec2(
@@ -13200,28 +13215,12 @@ var DocViewer = class extends CanvasWrapper {
     this.ctx.scale(this.state.scale.x, this.state.scale.y);
     this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1);
     this.ctx.drawImage(this.doc.canvas, 0, 0);
-    if (this.scaleBiggerThan(9)) {
-      this.ctx.fillStyle = "rgba(255,255,255,0.5)";
-      this.ctx.lineWidth = 0.05;
-      for (let i = 0; i < this.doc.width; i++) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(i, 0);
-        this.ctx.lineTo(i, this.doc.height);
-        this.ctx.stroke();
-      }
-      for (let i = 0; i < this.doc.height; i++) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, i);
-        this.ctx.lineTo(this.doc.width, i);
-        this.ctx.stroke();
-      }
-    }
     this.ctx.restore();
   }
   scaleBiggerThan(n) {
     return this.state.scale.x > n || this.state.scale.y > n;
   }
-  renderBorder() {
+  renderBackground() {
     this.ctx.save();
     this.ctx.filter = "blur(4px)";
     this.ctx.strokeStyle = "black";
@@ -13233,6 +13232,42 @@ var DocViewer = class extends CanvasWrapper {
       this.doc.height * this.state.scale.y + 1
     );
     this.ctx.restore();
+  }
+  renderForeground() {
+    if (this.scaleBiggerThan(9)) {
+      this.ctx.save();
+      this.ctx.strokeStyle = "rgba(0,0,0,0.5)";
+      this.ctx.lineWidth = 0.5;
+      let startingX = Math.max(
+        this.state.offset.x % this.state.scale.x,
+        this.state.offset.x
+      );
+      let startingY = Math.max(
+        this.state.offset.y % this.state.scale.y,
+        this.state.offset.y
+      );
+      let endX = this.state.offset.x + this.doc.width * this.state.scale.x;
+      if (endX > this.width) {
+        endX = this.width;
+      }
+      let endY = this.state.offset.y + this.doc.height * this.state.scale.y;
+      if (endY > this.height) {
+        endY = this.height;
+      }
+      for (let i = startingX; i < endX; i += this.state.scale.x) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(i, startingY);
+        this.ctx.lineTo(i, endY);
+        this.ctx.stroke();
+      }
+      for (let i = startingY; i < endY; i += this.state.scale.y) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(startingX, i);
+        this.ctx.lineTo(endX, i);
+        this.ctx.stroke();
+      }
+      this.ctx.restore();
+    }
   }
 };
 var TranslateState = class {
@@ -13480,7 +13515,19 @@ var DocExporter = class {
   }
   static docToPSD(doc) {
     console.log("Exporting to PSD");
-    let psdDoc = {
+    class psdFile {
+      constructor(width, height) {
+        this.children = [];
+        this.width = width;
+        this.height = height;
+      }
+    }
+    let psdDoc = new psdFile(doc.width, doc.height);
+    for (let layer of doc.layers) {
+      let newLayer = {};
+      newLayer["name"] = layer.name;
+    }
+    let psdDict = {
       width: doc.width,
       height: doc.height,
       children: [
@@ -13545,7 +13592,6 @@ function main() {
     a.download = "test.png";
     a.click();
   });
-  DocExporter.docToPSD(doc);
 }
 main();
 console.log("Main.ts loaded");

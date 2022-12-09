@@ -36,10 +36,10 @@ export class DocExporter {
         for (let layer of doc.layers) {
             let newLayer: any = {}
             newLayer["name"] = layer.name;
-            let bmp = layer.canvas.transfer
+            // let bmp = layer.canvas.transfer
         }
 
-        let psdDoc = {
+        let psdDict = {
             width: doc.width,
             height: doc.height,
             children: [

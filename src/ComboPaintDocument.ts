@@ -1,8 +1,10 @@
 import {CanvasWrapper} from "./CanvasWrapper";
 import {CPLayer} from "./Layers/CPLayer";
+import {BackgroundLayer} from "./Layers/BackgroundLayer";
 
 export default class ComboPaintDocument extends CanvasWrapper {
     layers: CPLayer[] = [];
+    background: BackgroundLayer;
 
     selectedLayer: CPLayer | null = null;
 
@@ -26,6 +28,7 @@ export default class ComboPaintDocument extends CanvasWrapper {
         super();
         this.width = width;
         this.height = height;
+        this.background = new BackgroundLayer(width, height, "checkerboard");
     }
 
     addLayer(layer: CPLayer, index: number = this.layers.length) {
@@ -42,18 +45,20 @@ export default class ComboPaintDocument extends CanvasWrapper {
     }
 
     render() {
-        this.ctx.clearRect(0, 0, this.width, this.height);
-        for (let layer of this.layers) {
-            // console.log("Rendering layer " + layer.name);
-            if (layer.visible) {
+        this.drawLayer(this.background);
 
-                this.ctx.globalAlpha = layer.opacity;
-                // console.log(this.ctx.globalCompositeOperation);
-                this.ctx.globalCompositeOperation = layer.blendMode;
-                layer.render();
-                this.ctx.drawImage(layer.canvas, 0, 0);
+        for (let layer of this.layers) {
+            if (layer.visible) {
+                this.drawLayer(layer);
             }
         }
+    }
+
+    drawLayer(layer: CPLayer) {
+        this.ctx.globalAlpha = layer.opacity;
+        this.ctx.globalCompositeOperation = layer.blendMode;
+        layer.render();
+        this.ctx.drawImage(layer.canvas, 0, 0);
     }
 
     toImage() {

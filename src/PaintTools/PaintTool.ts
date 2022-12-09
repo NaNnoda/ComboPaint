@@ -95,4 +95,9 @@ export class PaintTool {
     onMove(point: PointerPoint) {
         console.log("Move");
     }
+
+    commitChanges() {
+        this.doc.render();
+        this.viewer.render();
+    }
 }

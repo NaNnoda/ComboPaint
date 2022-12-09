@@ -34,4 +34,9 @@ export class PaintTool2D extends PaintTool {
         this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
         this.ctx.stroke();
     }
+
+    commitChanges() {
+        super.commitChanges();
+        this.viewer.render();
+    }
 }

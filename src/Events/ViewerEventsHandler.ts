@@ -52,11 +52,9 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
 
         let pos = this.viewer.viewToDocCoords(e.offsetX, e.offsetY);
 
-        this.viewer.paintToolEventHandler.triggerEvent("raw", e, pos);
-
-        // if (this.isMidDragging) {
-        //     this.triggerEvent("midDrag", e);
-        // }
+        if (e.button  !== 1) {
+            this.viewer.paintToolEventHandler.triggerEvent("raw", e, pos);
+        }
     }
 
     onMidDrag(e: MouseEvent) {

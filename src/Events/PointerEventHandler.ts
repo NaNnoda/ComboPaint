@@ -62,7 +62,6 @@ export class PointerEventHandler extends EventHandler<PointerEventKeys> {
             point.pos = customPos;
         }
 
-
         switch (rawEvent.type) {
             case "pointerdown":
                 this.triggerEvent("down", point);

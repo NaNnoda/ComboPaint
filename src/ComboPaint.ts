@@ -8,7 +8,6 @@ export default class ComboPaint {
     constructor(canvas: HTMLCanvasElement, div: HTMLDivElement) {
         this.canvas = canvas;
         this.div = div;
-        // this.viewer = new DocViewer(canvas);
     }
 
     openDocument(doc: ComboPaintDocument) {

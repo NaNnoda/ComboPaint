@@ -111,6 +111,7 @@ export class DocViewer extends CanvasWrapper {
         );
         this.state.scale = newScale;
         this.state.offset = newOffset;
+
     }
 
     docToViewCoords(x: number, y: number) {
@@ -120,37 +121,43 @@ export class DocViewer extends CanvasWrapper {
         );
     }
 
+    /**
+     * Renders the document to the canvas.
+     * Update document before calling this.
+     */
     renderDoc() {
         this.ctx.save();
         this.ctx.translate(this.state.offset.x, this.state.offset.y);
         this.ctx.scale(this.state.scale.x, this.state.scale.y);
-        this.doc.render();
+        // this.doc.render();
 
         // if scale is bigger than 1, don't use image smoothing
-        if (this.state.scale.x > 1 || this.state.scale.y > 1) {
-            this.ctx.imageSmoothingEnabled = false;
-            // if scale is bigger than 2, draw a grid
-            if (this.state.scale.x > 2 || this.state.scale.y > 2) {
-                this.ctx.lineWidth = 1;
-                this.ctx.strokeStyle = "black";
+        this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1);
+        this.ctx.drawImage(this.doc.canvas, 0, 0);
+        // if scale is bigger than 9, draw a grid
+        if (this.scaleBiggerThan(9)) {
+            // invert color
+            // this.ctx.globalCompositeOperation = "d";
+            this.ctx.fillStyle = "rgba(255,255,255,0.5)";
+            this.ctx.lineWidth = 0.05;
+            for (let i = 0; i < this.doc.width; i++) {
                 this.ctx.beginPath();
-                for (let x = 0; x < this.doc.width; x++) {
-                    this.ctx.moveTo(x, 0);
-                    this.ctx.lineTo(x, this.doc.height);
-                }
-                for (let y = 0; y < this.doc.height; y++) {
-                    this.ctx.moveTo(0, y);
-                    this.ctx.lineTo(this.doc.width, y);
-                }
+                this.ctx.moveTo(i, 0);
+                this.ctx.lineTo(i, this.doc.height);
                 this.ctx.stroke();
             }
-        } else {
-            // if scale is smaller than 1, make the image use antialiasing
-            this.ctx.imageSmoothingEnabled = true;
+            for (let i = 0; i < this.doc.height; i++) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, i);
+                this.ctx.lineTo(this.doc.width, i);
+                this.ctx.stroke();
+            }
         }
-
-        this.ctx.drawImage(this.doc.canvas, 0, 0);
         this.ctx.restore();
+    }
+
+    scaleBiggerThan(n: number) {
+        return this.state.scale.x > n || this.state.scale.y > n;
     }
 
     renderBorder() {

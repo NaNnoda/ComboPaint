@@ -58,27 +58,27 @@ export class DocViewer extends HTMLCanvasWrapper2D {
             }
             let dx = e.clientX - lastE.clientX;
             let dy = e.clientY - lastE.clientY;
-            console.log({dx, dy});
+            // console.log({dx, dy});/**/
             this.state.offset = offset.addXY(dx, dy);
             this.render();
         });
         this.events.registerEvent("wheel", (e: WheelEvent) => {
             let isTouchPad = e.deltaMode === 1;
-            console.log(e.deltaMode);
+            // console.log(e.deltaMode);
             if (isTouchPad) {
                 this.offsetCanvas(0, e.deltaY);
                 this.offsetCanvas(e.deltaX, 0);
                 return;
             }
-            console.log("not touchpad");
+            // console.log("not touchpad");
             this.zoomRelativeToMouse(1 - e.deltaY / 1000);
-            console.log(this.state.scale);
+            // console.log(this.state.scale);
             this.render();
         });
     }
 
     render() {
-        console.log("Rendering");
+        console.debug("Rendering");
         this.ctx.fillStyle = "#cfcfcf";
         this.ctx.fillRect(0, 0, this.width, this.height);
         // this.renderBorder();
@@ -118,7 +118,6 @@ export class DocViewer extends HTMLCanvasWrapper2D {
     relativeZoom(x: number, y: number, zoom: number) {
         if (this.state.scale.x > 100) {
             if (zoom > 1) {
-                // console.log("Too big");
                 return;
             }
         }
@@ -177,6 +176,7 @@ export class DocViewer extends HTMLCanvasWrapper2D {
         this.ctx.restore();
 
         // Draw background layer
+        this.ctx.save();
         this.ctx.translate(this.state.offset.x, this.state.offset.y);
         this.ctx.scale(this.state.scale.x, this.state.scale.y);
         // if scale is bigger than 1, don't use image smoothing
@@ -244,9 +244,6 @@ export class DocViewer extends HTMLCanvasWrapper2D {
                 this.state.offset.x % this.state.scale.x,
                 this.state.offset.x
             );
-            // if (startingX < 0) {
-            //     startingX = startingX % 1;
-            // }
             let startingY = Math.max(
                 this.state.offset.y % this.state.scale.y,
                 this.state.offset.y

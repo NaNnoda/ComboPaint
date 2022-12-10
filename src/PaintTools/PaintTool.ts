@@ -57,19 +57,19 @@ export abstract class PaintTool {
     }
 
     onDown(point: PointerPoint) {
-        console.log("Down");
+        console.debug("Down");
     }
 
     onUp(point: PointerPoint) {
-        console.log("Up");
+        console.debug("Up");
     }
 
     onPressedMove(point: PointerPoint) {
-        console.log("PressedMove");
+        console.debug("PressedMove");
     }
 
     onMove(point: PointerPoint) {
-        console.log("Move");
+        console.debug("Move");
     }
 
     commitChanges() {

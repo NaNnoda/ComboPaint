@@ -64,7 +64,7 @@ function main() {
             [layer1, layer2],
             "Document 1"
         ),
-        new PaintBucket()
+        new BasicPen()
     );
 
     initConsole();

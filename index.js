@@ -13356,26 +13356,22 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
       }
       let dx = e.clientX - lastE.clientX;
       let dy = e.clientY - lastE.clientY;
-      console.log({ dx, dy });
       this.state.offset = offset.addXY(dx, dy);
       this.render();
     });
     this.events.registerEvent("wheel", (e) => {
       let isTouchPad = e.deltaMode === 1;
-      console.log(e.deltaMode);
       if (isTouchPad) {
         this.offsetCanvas(0, e.deltaY);
         this.offsetCanvas(e.deltaX, 0);
         return;
       }
-      console.log("not touchpad");
       this.zoomRelativeToMouse(1 - e.deltaY / 1e3);
-      console.log(this.state.scale);
       this.render();
     });
   }
   render() {
-    console.log("Rendering");
+    console.debug("Rendering");
     this.ctx.fillStyle = "#cfcfcf";
     this.ctx.fillRect(0, 0, this.width, this.height);
     this.renderBackground();
@@ -13456,6 +13452,7 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
       this.doc.height * this.state.scale.y + 1
     );
     this.ctx.restore();
+    this.ctx.save();
     this.ctx.translate(this.state.offset.x, this.state.offset.y);
     this.ctx.scale(this.state.scale.x, this.state.scale.y);
     this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1);
@@ -13703,16 +13700,16 @@ var PaintTool = class {
     return GlobalValues.viewer;
   }
   onDown(point) {
-    console.log("Down");
+    console.debug("Down");
   }
   onUp(point) {
-    console.log("Up");
+    console.debug("Up");
   }
   onPressedMove(point) {
-    console.log("PressedMove");
+    console.debug("PressedMove");
   }
   onMove(point) {
-    console.log("Move");
+    console.debug("Move");
   }
   commitChanges() {
     this.doc.render();
@@ -13984,7 +13981,7 @@ function main() {
       [layer1, layer2],
       "Document 1"
     ),
-    new PaintBucket()
+    new BasicPen()
   );
   initConsole();
 }

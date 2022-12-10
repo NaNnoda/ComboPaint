@@ -13082,7 +13082,6 @@ var ViewerEventsHandler = class extends EventHandler {
       this.lastMousePoint = null;
     });
     canvas.addEventListener("mousemove", (e) => {
-      console.log({ x: e.offsetX, y: e.offsetY });
       if (this.isMidDragging) {
         this.triggerEvent("midDrag", e);
       }
@@ -13094,7 +13093,6 @@ var ViewerEventsHandler = class extends EventHandler {
   }
   onRawPointer(e) {
     this.lastPointerPoint = e;
-    console.log("raw pointer");
     let pos = this.viewer.viewToDocCoords(e.offsetX, e.offsetY);
     if (e.button !== 1) {
       this.viewer.paintToolEventHandler.triggerEvent("raw", e, pos);
@@ -13509,40 +13507,52 @@ var DocExporter = class {
       throw new Error("Failed to get context");
     }
     for (let layer of doc.layers) {
+      ctx.globalAlpha = layer.opacity;
       ctx.drawImage(layer.canvas, 0, 0);
     }
     return canvas.toDataURL("image/png");
   }
   static docToPSD(doc) {
     console.log("Exporting to PSD");
-    class psdFile {
+    class PsdLayer {
+      constructor(cpLayer) {
+        this.top = 0;
+        this.left = 0;
+        this.bottom = cpLayer.height;
+        this.right = cpLayer.width;
+        this.blendMode = "normal";
+        this.opacity = cpLayer.opacity;
+        this.transparencyProtected = false;
+        this.hidden = false;
+        this.clipping = false;
+        this.name = cpLayer.name;
+        this.canvas = this.canvasToOffScreenCanvas(cpLayer.canvas);
+      }
+      canvasToOffScreenCanvas(canvas) {
+        let offscreenCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+        let ctx = offscreenCanvas.getContext("2d");
+        if (ctx === null) {
+          throw new Error("Failed to get context");
+        }
+        ctx.drawImage(canvas, 0, 0);
+        return offscreenCanvas;
+      }
+    }
+    class PsdFile {
       constructor(width, height) {
         this.children = [];
         this.width = width;
         this.height = height;
       }
     }
-    let psdDoc = new psdFile(doc.width, doc.height);
+    let psdDoc = new PsdFile(doc.width, doc.height);
     for (let layer of doc.layers) {
-      let newLayer = {};
-      newLayer["name"] = layer.name;
+      let psdLayer = new PsdLayer(layer);
+      psdDoc.children.push(psdLayer);
     }
-    let psdDict = {
-      width: doc.width,
-      height: doc.height,
-      children: [
-        {
-          name: "Layer 1"
-        }
-      ]
-    };
     let buffer = psd.writePsd(psdDoc);
     let blob = new Blob([buffer], { type: "image/psd" });
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement("a");
-    a.href = url;
-    a.download = "test.psd";
-    a.click();
+    return URL.createObjectURL(blob);
   }
 };
 
@@ -13554,6 +13564,35 @@ function addBtnToDom(text, className, onclick, parent = document.body) {
   btn.onclick = onclick;
   parent.appendChild(btn);
 }
+
+// src/Utils/Utils.ts
+function downloadUrl(url, fileName) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+}
+function addToConsole(path, value) {
+  let parts = path.split(".");
+  let obj = window;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (obj[parts[i]] === void 0) {
+      obj[parts[i]] = {};
+    }
+    obj = obj[parts[i]];
+  }
+  obj[parts[parts.length - 1]] = value;
+}
+
+// src/Preference.ts
+var Preference = class {
+  static get(key) {
+    return localStorage.getItem(key);
+  }
+  static set(key, value) {
+    localStorage.setItem(key, value);
+  }
+};
 
 // src/Main.ts
 function main() {
@@ -13584,14 +13623,18 @@ function main() {
   docViewer.render();
   addBtnToDom("export to png", "test", () => {
     let url = DocExporter.docToPNG(doc);
-    let img = document.createElement("img");
-    img.src = url;
-    console.log(url);
-    let a = document.createElement("a");
-    a.href = url;
-    a.download = "test.png";
-    a.click();
+    downloadUrl(url, "test.png");
   });
+  addBtnToDom("export to psd", "test", () => {
+    let url = DocExporter.docToPSD(doc);
+    downloadUrl(url, "test.psd");
+  });
+  addToConsole("save.png", () => {
+    let url = DocExporter.docToPNG(doc);
+    downloadUrl(url, "test.png");
+  });
+  addToConsole("preferences", Preference);
+  addToConsole("localStorage", localStorage);
 }
 main();
 console.log("Main.ts loaded");

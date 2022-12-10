@@ -1,12 +1,13 @@
 import {DocViewer} from "./DocViewer";
 import ComboPaintDocument from "./ComboPaintDocument";
 import {CPLayer} from "./Layers/CPLayer";
-import {BackgroundLayer} from "./Layers/BackgroundLayer";
 import {PointerEventHandler} from "./Events/PointerEventHandler";
 import {BasicPen} from "./PaintTools/BasicPen";
 import {PaintToolEventHandler} from "./Events/PaintToolEventHandler";
 import {DocExporter} from "./Utils/DocExporter";
 import {addBtnToDom} from "./Utils/DomCreator";
+import {addToConsole, downloadUrl} from "./Utils/Utils";
+import {Preference} from "./Preference";
 
 
 function main() {
@@ -50,15 +51,24 @@ function main() {
 
     addBtnToDom("export to png", "test", () => {
         let url = DocExporter.docToPNG(doc);
-        let img = document.createElement("img");
-        img.src = url;
-        console.log(url);
-        //download the image
-        let a = document.createElement("a");
-        a.href = url;
-        a.download = "test.png";
-        a.click();
+        downloadUrl(url, "test.png");
     });
+
+    addBtnToDom("export to psd", "test", () => {
+        let url = DocExporter.docToPSD(doc);
+        downloadUrl(url, "test.psd");
+
+    });
+
+    addToConsole("save.png", () => {
+        let url = DocExporter.docToPNG(doc);
+        downloadUrl(url, "test.png");
+    });
+
+    addToConsole("preferences", Preference);
+
+    addToConsole("localStorage", localStorage);
+
 
     // DocExporter.docToPSD(doc);
 

@@ -34,7 +34,7 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
             this.lastMousePoint = null;
         });
         canvas.addEventListener("mousemove", (e) => {
-            console.log({x: e.offsetX, y: e.offsetY});
+            // console.log({x: e.offsetX, y: e.offsetY});
             if (this.isMidDragging) {
                 this.triggerEvent("midDrag", e);
             }
@@ -48,7 +48,7 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
 
     onRawPointer(e: PointerEvent) {
         this.lastPointerPoint = e;
-        console.log("raw pointer");
+        // console.log("raw pointer");
 
         let pos = this.viewer.viewToDocCoords(e.offsetX, e.offsetY);
 

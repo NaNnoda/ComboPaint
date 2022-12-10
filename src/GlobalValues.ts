@@ -2,17 +2,25 @@ import ComboPaintDocument from "./Document/ComboPaintDocument";
 import {DocViewer} from "./DocViewer";
 import {PaintTool} from "./PaintTools/PaintTool";
 import {CPLayer} from "./Layers/CPLayer";
-import {NullLayer} from "./Layers/NullLayer";
+import {nullLayer, NullLayer} from "./Layers/NullLayer";
 import {BasicPen} from "./PaintTools/BasicPen";
+import {nullCPDoc} from "./Document/NullCPDoc";
+import {CPLayer2D} from "./Layers/CPLayer2D";
 
 export class GlobalValues {
-    static _currDoc: ComboPaintDocument;
+    static _currDoc: ComboPaintDocument = nullCPDoc;
     static _allDocs: ComboPaintDocument[] = [];
     static _allDocsSet: Set<ComboPaintDocument> = new Set<ComboPaintDocument>();
     static _currTool: PaintTool;
     static _viewer: DocViewer;
 
-    static get currDoc() {
+    static get currDoc(): ComboPaintDocument {
+        if (this._currDoc === null) {
+            console.log("Current document is null");
+        }
+        if (this._currDoc === nullCPDoc) {
+            console.log("Current document is nullCPDoc");
+        }
         return GlobalValues._currDoc;
     }
 
@@ -35,7 +43,6 @@ export class GlobalValues {
             console.log("Doc not found");
             return;
         }
-        // remove from array
         let index = GlobalValues.allDocs.indexOf(doc);
         if (index !== -1) {
             GlobalValues.allDocs.splice(index, 1);
@@ -79,10 +86,13 @@ export class GlobalValues {
     }
 
     static get currLayer() {
-        if (GlobalValues.currDoc.selectedLayer === null) {
+        if (!GlobalValues.currDoc) {
+            console.log("No current document");
+            this.currDoc = nullCPDoc;
+        }
+        if (GlobalValues.currDoc.selectedLayer === null || GlobalValues.currDoc.selectedLayer === nullLayer) {
             console.log("No layer selected");
-            return NullLayer.getInstance();
-            // throw new Error("Layer not set");
+            return nullLayer;
         }
         return GlobalValues.currDoc.selectedLayer;
     }
@@ -95,23 +105,19 @@ export class GlobalValues {
         if (doc === null) {
             doc = new ComboPaintDocument(
                 [3200, 1800],
-                [new CPLayer(3200, 1800, "Layer 1").fill("#ffffff")]
+                [new CPLayer2D(3200, 1800, "Layer 1").fill("#ffffff")],
+                "Untitled"
             );
         }
         if (tool === null) {
             tool = new BasicPen();
         }
-
         GlobalValues.viewer = new DocViewer(canvas);
-
         GlobalValues.currDoc = doc;
         if (this.currDoc.selectedLayer !== null) {
             this.currLayer = this.currDoc.selectedLayer;
         }
-
-        GlobalValues.allDocs.push(doc);
         GlobalValues.currTool = tool;
-
         this.currDoc.render();
         this.viewer.render();
     }

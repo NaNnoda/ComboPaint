@@ -5,25 +5,20 @@ import ComboPaintDocument from "../Document/ComboPaintDocument";
 import {DocViewer} from "../DocViewer";
 import {GlobalValues} from "../GlobalValues";
 
-export class PaintTool {
+export abstract class PaintTool {
     name: string;
     _eventHandler: PaintToolEventHandler | null = null;
 
-    // setLayer(layer: CPLayer) {
-    //     console.debug("Setting layer to " + layer.name);
-    //     this._layer = layer;
-    // }
-
     get layer() {
-        // if (this._layer === null) {
-        //     throw new Error("Layer not set");
-        // }
-        // return this._layer;
         if (GlobalValues.currDoc.selectedLayer === null) {
             throw new Error("Layer not set");
         }
 
         return GlobalValues.currDoc.selectedLayer;
+    }
+
+    get ctx() {
+        return GlobalValues.currLayer.ctx;
     }
 
     get eventHandler() {
@@ -54,7 +49,7 @@ export class PaintTool {
         return GlobalValues.viewer;
     }
 
-    constructor(eventHandler: PaintToolEventHandler | null = null, name: string | null = null) {
+    protected constructor(eventHandler: PaintToolEventHandler | null = null, name: string | null = null) {
         if (name === null) {
             name = this.constructor.name;
         }

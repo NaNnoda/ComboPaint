@@ -1,16 +1,16 @@
-import {CPLayer} from "../Layers/CPLayer";
 import {PointerEventHandler, PointerPoint} from "../Events/PointerEventHandler";
-import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {PaintTool} from "./PaintTool";
 
-export class PaintTool2D extends PaintTool {
+export abstract class PaintTool2D extends PaintTool {
+
+    _imageData: ImageData | null = null;
 
 
     get ctx() {
-        if (this.layer === null) {
-            throw new Error("Layer not set");
-        }
-        return this.layer.ctx;
+        // if (typeof this.layer !== "CPLayer2D") {
+        //     throw new Error("Layer not set");
+        // }
+        return this.layer.ctx as OffscreenCanvasRenderingContext2D;
     }
 
     setFillStyle(style: string) {
@@ -38,8 +38,53 @@ export class PaintTool2D extends PaintTool {
         this.ctx.stroke();
     }
 
+    getRawPixel(x: number, y: number) {
+        if (this._imageData === null) {
+            this._imageData = this.ctx.getImageData(0, 0, this.layer.width, this.layer.height);
+        }
+        const index = (y * this.layer.width + x) * 4;
+        return {
+            r: this._imageData.data[index],
+            g: this._imageData.data[index + 1],
+            b: this._imageData.data[index + 2],
+            a: this._imageData.data[index + 3]
+        }
+    }
+
+    setPixel(x: number, y: number, r: number, g: number, b: number, a: number) {
+        if (this._imageData === null) {
+            this._imageData = this.ctx.getImageData(0, 0, this.layer.width, this.layer.height);
+        }
+        const index = (y * this.layer.width + x) * 4;
+        this._imageData.data[index] = r;
+        this._imageData.data[index + 1] = g;
+        this._imageData.data[index + 2] = b;
+        this._imageData.data[index + 3] = a;
+    }
+
+    getSafePixel(x: number, y: number, defaultPixel: any = {
+        r: -1,
+        g: -1,
+        b: -1,
+        a: -1
+    }) {
+        if (x < 0 || y < 0 || x >= this.layer.width || y >= this.layer.height) {
+            return defaultPixel;
+        }
+        return this.getRawPixel(x, y);
+    }
+
+    setRawPixel(x: number, y: number, r: number, g: number, b: number, a: number) {
+
+    }
+
+
     commitChanges() {
-        super.commitChanges();
+        this.doc.isDirty = true;
+        if (this._imageData !== null) {
+            this.ctx.putImageData(this._imageData, 0, 0);
+            this._imageData = null;
+        }
         this.viewer.render();
     }
 }

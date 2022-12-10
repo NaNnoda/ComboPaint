@@ -1,87 +1,73 @@
-import {DocViewer} from "./DocViewer";
 import ComboPaintDocument from "./Document/ComboPaintDocument";
 import {CPLayer} from "./Layers/CPLayer";
-import {PointerEventHandler} from "./Events/PointerEventHandler";
 import {BasicPen} from "./PaintTools/BasicPen";
-import {PaintToolEventHandler} from "./Events/PaintToolEventHandler";
 import {DocExporter} from "./Utils/DocExporter";
-import {addBtnToDom} from "./Utils/DomCreator";
 import {addToConsole, downloadUrl} from "./Utils/Utils";
 import {Preference} from "./Preference";
 import {GlobalValues} from "./GlobalValues";
+import {CPLayer2D} from "./Layers/CPLayer2D";
+import {PaintBucket} from "./PaintTools/PaintBucket";
 
+function initConsole() {
+    addToConsole("GlobalValues", GlobalValues);
+    addToConsole("Preference", Preference);
+    // addToConsole("localStorage",localStorage);
+    addToConsole("save.png", (name: string = GlobalValues.currDoc.name) => {
+        let url = DocExporter.exportPNG(GlobalValues.currDoc);
+        downloadUrl(url, `${name}.png`);
+    });
+    addToConsole("save.psd", (name: string = GlobalValues.currDoc.name) => {
+        let url = DocExporter.exportPSD(GlobalValues.currDoc);
+        downloadUrl(url, `${name}.psd`);
+    });
+    addToConsole("currDoc", GlobalValues.currDoc);
+    addToConsole("currLayer", GlobalValues.currLayer);
+    addToConsole("currTool", GlobalValues.currTool);
+    addToConsole("doc.addLayer", (name: string) => {
+        GlobalValues.currDoc.addLayer(new CPLayer2D(GlobalValues.currDoc.width, GlobalValues.currDoc.height, name));
+    });
+
+    addToConsole("ls", () => {
+        for (let doc of GlobalValues.allDocs) {
+            console.log(doc.name);
+        }
+    })
+
+    addToConsole("tool", {
+        pen: new BasicPen(),
+        bucket: new PaintBucket()
+    })
+}
 
 function main() {
+    addToConsole("G", GlobalValues);
+
     let viewCanvas = document.getElementById("viewCanvas") as HTMLCanvasElement;
+    if (viewCanvas === null) {
+        throw new Error("viewCanvas is null");
+    }
     viewCanvas.width = 800;
     viewCanvas.height = 600;
     let width = 3200;
     let height = 1800;
     // let layer0 = new BackgroundLayer(width, height, "checkerboard");
-    let layer1 = new CPLayer(width, height, "Layer 1");
-    let layer2 = new CPLayer(width, height, "red");
+    let layer1 = new CPLayer2D(width, height, "Layer 1");
+    let layer2 = new CPLayer2D(width, height, "red");
     layer2.ctx.fillStyle = "red";
     layer2.ctx.fillRect(0, 0, width / 2, 10);
     layer2.opacity = 0.2;
-
-    if (viewCanvas === null) {
-        throw new Error("viewCanvas is null");
-    }
 
     GlobalValues.init(
         viewCanvas,
         new ComboPaintDocument(
             [width, height],
-            [layer1, layer2]
+            [layer1, layer2],
+            "Document 1"
         ),
-        new BasicPen()
+        new PaintBucket()
     );
 
-    // console.debug("Creating document");
-    // console.debug("Adding layers");
-    //
-    // let paintToolEventHandler = new PaintToolEventHandler();
-    // PointerEventHandler.bindWithElement(paintToolEventHandler, viewCanvas);
-    //
-    // let pen = new BasicPen();
-    //
-    // pen.setLayer(layer1);
-    //
-    // let doc = new ComboPaintDocument(width, height);
-    //
-    // // doc.addLayer(layer0);
-    // doc.addLayer(layer1);
-    // doc.addLayer(layer2);
-    // doc.render();
-    //
-    // let docViewer = new DocViewer(viewCanvas, doc);
-    //
-    // pen.doc = doc;
-    // pen.viewer = docViewer;
-    //
-    // pen.eventHandler = docViewer.paintToolEventHandler;
-    //
-    // docViewer.render();
-    //
-    // addBtnToDom("export to png", "test", () => {
-    //     let url = DocExporter.docToPNG(doc);
-    //     downloadUrl(url, "test.png");
-    // });
-    //
-    // addBtnToDom("export to psd", "test", () => {
-    //     let url = DocExporter.docToPSD(doc);
-    //     downloadUrl(url, "test.psd");
-    //
-    // });
-    //
-    // addToConsole("save.png", () => {
-    //     let url = DocExporter.docToPNG(doc);
-    //     downloadUrl(url, "test.png");
-    // });
-    //
-    // addToConsole("preferences", Preference);
-    //
-    // addToConsole("localStorage", localStorage);
+    initConsole();
 }
 
 main();

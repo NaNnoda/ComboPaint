@@ -1,8 +1,9 @@
 import {CPLayer} from "./CPLayer";
+import {CPLayer2D} from "./CPLayer2D";
 
 type backgroundStyle = string | CanvasGradient | CanvasPattern | "checkerboard" | "solid" | "image";
 
-export class BackgroundLayer extends CPLayer {
+export class BackgroundLayer extends CPLayer2D {
     fillStyle: backgroundStyle;
 
     constructor(width: number, height: number, fillStyle: string = "checkerboard") {

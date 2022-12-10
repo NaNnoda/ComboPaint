@@ -5,9 +5,15 @@ export class NullLayer extends CPLayer {
 
     public static getInstance(): NullLayer {
         if (!NullLayer.instance) {
-            NullLayer.instance = new NullLayer(1,1, "Null Layer");
+            NullLayer.instance = new NullLayer(1,1, "Null Layer", "2d");
         }
         return NullLayer.instance;
+    }
+
+    render(): void {
+    }
+
+    resize(width: number, height: number, offsetX: number, offsetY: number): void {
     }
 }
 

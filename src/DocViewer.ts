@@ -1,5 +1,4 @@
 import ComboPaintDocument from "./Document/ComboPaintDocument";
-import {CanvasWrapper} from "./CanvasWrapper";
 import {Vec2} from "./MathUtils/Vec2";
 import {PaintToolEventHandler} from "./Events/PaintToolEventHandler";
 import {ViewerEventsHandler} from "./Events/ViewerEventsHandler";
@@ -7,14 +6,13 @@ import {BackgroundLayer} from "./Layers/BackgroundLayer";
 import {GlobalValues} from "./GlobalValues";
 import {CPLayer} from "./Layers/CPLayer";
 import {nullLayer, NullLayer} from "./Layers/NullLayer";
+import {HTMLCanvasWrapper2D} from "./CanvasWrapper/HTMLCanvasWrapper2D";
 
 /**
  * Class that renders a ComboPaintDocument to a canvas.
  * and also handles user input.
  */
-export class DocViewer extends CanvasWrapper {
-    // _doc: ComboPaintDocument;
-
+export class DocViewer extends HTMLCanvasWrapper2D {
     _state: TranslateState;
 
     paintToolEventHandler: PaintToolEventHandler;
@@ -24,7 +22,6 @@ export class DocViewer extends CanvasWrapper {
 
     constructor(canvas: HTMLCanvasElement) {
         super(canvas);
-
 
         this.paintToolEventHandler = new PaintToolEventHandler();
         this.events = new ViewerEventsHandler(this);
@@ -66,9 +63,6 @@ export class DocViewer extends CanvasWrapper {
             this.render();
         });
         this.events.registerEvent("wheel", (e: WheelEvent) => {
-            // e.preventDefault();
-            // console.log("Wheel");
-            // console.log(e.deltaY);
             let isTouchPad = e.deltaMode === 1;
             console.log(e.deltaMode);
             if (isTouchPad) {
@@ -150,16 +144,16 @@ export class DocViewer extends CanvasWrapper {
         );
     }
 
-    /**
-     * Renders the document to the canvas.
-     * Update document before calling this.
-     */
+
     renderDoc() {
         this.ctx.save();
         this.ctx.translate(this.state.offset.x, this.state.offset.y);
         this.ctx.scale(this.state.scale.x, this.state.scale.y);
         // if scale is bigger than 1, don't use image smoothing
         this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1);
+        if (this.doc.isDirty) {
+            this.doc.render();
+        }
         this.ctx.drawImage(this.doc.canvas, 0, 0);
         this.ctx.restore();
     }
@@ -169,6 +163,7 @@ export class DocViewer extends CanvasWrapper {
     }
 
     renderBackground() {
+        // Draw background
         this.ctx.save();
         this.ctx.filter = "blur(4px)";
         this.ctx.strokeStyle = "black";
@@ -181,20 +176,62 @@ export class DocViewer extends CanvasWrapper {
         );
         this.ctx.restore();
 
-
-        this.ctx.save();
+        // Draw background layer
         this.ctx.translate(this.state.offset.x, this.state.offset.y);
         this.ctx.scale(this.state.scale.x, this.state.scale.y);
         // if scale is bigger than 1, don't use image smoothing
         this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1)
-        if (this.background == nullLayer){
+        if (this.background == nullLayer) {
             console.log("Background is null");
 
-        }else{
+        } else {
             this.ctx.drawImage(this.background.canvas, 0, 0);
         }
 
         this.ctx.restore();
+    }
+
+    drawScrollBars(barWidth: number, color1: string, color2: string) {
+        if (this.doc.width * this.state.scale.x > this.width) {
+            this.ctx.fillStyle = color1;
+            this.ctx.fillRect(
+                0,
+                this.height - barWidth,
+                this.width,
+                barWidth
+            );
+            this.ctx.fillStyle = color2;
+
+            let barXWidth = this.width * this.width / (this.doc.width * this.state.scale.x);
+            let barXPos = -this.state.offset.x * this.width / (this.doc.width * this.state.scale.x);
+            this.ctx.fillRect(
+                barXPos,
+                this.height - barWidth,
+                barXWidth,
+                barWidth
+            );
+
+        }
+
+        if (this.doc.height * this.state.scale.y > this.height) {
+            this.ctx.fillStyle = color1;
+            this.ctx.fillRect(
+                this.width - barWidth,
+                0,
+                barWidth,
+                this.height
+            );
+            this.ctx.fillStyle = color2;
+
+            let barYHeight = this.height * this.height / (this.doc.height * this.state.scale.y);
+            let barYPos = -this.state.offset.y * this.height / (this.doc.height * this.state.scale.y);
+            this.ctx.fillRect(
+                this.width - barWidth,
+                barYPos,
+                barWidth,
+                barYHeight
+            );
+        }
     }
 
     renderForeground() {
@@ -214,9 +251,6 @@ export class DocViewer extends CanvasWrapper {
                 this.state.offset.y % this.state.scale.y,
                 this.state.offset.y
             );
-            // if (startingY < 0) {
-            //     startingY = startingY % 1;
-            // }
 
             let endX = (this.state.offset.x + this.doc.width * this.state.scale.x);
             if (endX > this.width) {
@@ -242,12 +276,11 @@ export class DocViewer extends CanvasWrapper {
             }
             this.ctx.restore();
         }
-    }
 
-    //
-    // renderBorder() {
-    //
-    // }
+        this.drawScrollBars(10,
+            "#ffffff",
+            "#a9a9a9");
+    }
 }
 
 class TranslateState {

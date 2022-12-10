@@ -1,12 +1,13 @@
-import {CanvasWrapper} from "../CanvasWrapper";
+import {HTMLCanvasWrapper} from "../CanvasWrapper/HTMLCanvasWrapper";
 import {CPLayer} from "../Layers/CPLayer";
 import {BackgroundLayer} from "../Layers/BackgroundLayer";
-import {OffScreenCanvasWrapper2D} from "../OffScreenCanvasWrapper2D";
+import {OffScreenCanvasWrapper2D} from "../CanvasWrapper/OffScreenCanvasWrapper2D";
 import {nullLayer} from "../Layers/NullLayer";
 
 export default class ComboPaintDocument extends OffScreenCanvasWrapper2D {
     layers: CPLayer[] = [];
     selectedLayer: CPLayer = nullLayer;
+    name: string;
 
     get height() {
         return this.canvas.height;
@@ -24,11 +25,11 @@ export default class ComboPaintDocument extends OffScreenCanvasWrapper2D {
         this.canvas.width = width;
     }
 
-    constructor(size: [number, number], layers: CPLayer[] = []) {
+    constructor(size: [number, number], layers: CPLayer[] = [], name: string) {
         super(size[0], size[1]);
+        this.name = name;
 
         this.addLayers(...layers);
-        // this.background = new BackgroundLayer(width, height, "checkerboard");
     }
 
     addLayer(layer: CPLayer, index: number = this.layers.length) {
@@ -47,15 +48,33 @@ export default class ComboPaintDocument extends OffScreenCanvasWrapper2D {
         }
     }
 
+    selectLayerByIndex(index: number) {
+        if (index < 0 || index >= this.layers.length) {
+            // throw new Error("Index out of bounds");
+            console.log("Index out of bounds");
+            return;
+        }
+        this.selectedLayer = this.layers[index];
+    }
+
     render() {
-        // this.drawLayer(this.background);
+        // Don't render if the document is not dirty
+        if (!this.isDirty) {
+            return;
+        }
+
+        // Clear the canvas
         this.clear();
 
+        // Draw the layers
         for (let layer of this.layers) {
             if (layer.visible) {
                 this.drawLayer(layer);
             }
         }
+
+        // Mark the document as clean
+        this.isDirty = false;
     }
 
     drawLayer(layer: CPLayer) {
@@ -64,6 +83,5 @@ export default class ComboPaintDocument extends OffScreenCanvasWrapper2D {
         layer.render();
         this.ctx.drawImage(layer.canvas, 0, 0);
     }
-
 }
 

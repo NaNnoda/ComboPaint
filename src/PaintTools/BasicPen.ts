@@ -2,6 +2,9 @@ import {PaintTool2D} from "./PaintTool2D";
 import {PointerPoint} from "../Events/PointerEventHandler";
 
 export class BasicPen extends PaintTool2D {
+    constructor() {
+        super();
+    }
 
     onPressedMove(point: PointerPoint) {
         super.onPressedMove(point);

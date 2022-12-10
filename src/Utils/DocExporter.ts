@@ -4,7 +4,7 @@ import {CPLayer} from "../Layers/CPLayer";
 
 
 export class DocExporter {
-    static docToPNG(doc: ComboPaintDocument): string {
+    static exportPNG(doc: ComboPaintDocument): string {
         doc.render();
         let canvas = document.createElement("canvas");
         canvas.width = doc.width;
@@ -20,7 +20,7 @@ export class DocExporter {
         return canvas.toDataURL("image/png");
     }
 
-    static docToPSD(doc: ComboPaintDocument): string {
+    static exportPSD(doc: ComboPaintDocument): string {
         console.log("Exporting to PSD");
 
         class PsdLayer{

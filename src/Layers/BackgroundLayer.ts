@@ -5,11 +5,11 @@ type backgroundStyle = string | CanvasGradient | CanvasPattern | "checkerboard" 
 export class BackgroundLayer extends CPLayer {
     fillStyle: backgroundStyle;
 
-    constructor(width: number, height: number, fillStyle: string = "white") {
+    constructor(width: number, height: number, fillStyle: string = "checkerboard") {
         super(width, height, "Background");
         this.fillStyle = fillStyle;
+        this.render();
     }
-
     drawCheckerboard(color1: string, color2: string, size: number) {
         this.ctx.fillStyle = color1;
         this.ctx.fillRect(0, 0, this.width, this.height);

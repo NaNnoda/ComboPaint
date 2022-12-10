@@ -1,13 +1,14 @@
 import {CanvasWrapper} from "../CanvasWrapper";
+import {OffScreenCanvasWrapper2D} from "../OffScreenCanvasWrapper2D";
 
-export class CPLayer extends CanvasWrapper {
+export class CPLayer extends OffScreenCanvasWrapper2D {
     name: string;
     visible: boolean;
     opacity: number;
     blendMode: GlobalCompositeOperation;
 
     constructor(width: number, height: number, name: string = "New Layer") {
-        super();
+        super(width, height);
         this.width = width;
         this.height = height;
         this.name = name;

@@ -1,4 +1,4 @@
-import ComboPaintDocument from "../ComboPaintDocument";
+import ComboPaintDocument from "../Document/ComboPaintDocument";
 import * as psd from "ag-psd"
 import {CPLayer} from "../Layers/CPLayer";
 
@@ -47,7 +47,7 @@ export class DocExporter {
                 this.hidden = false;
                 this.clipping = false;
                 this.name = cpLayer.name;
-                this.canvas = this.canvasToOffScreenCanvas(cpLayer.canvas);
+                this.canvas = cpLayer.canvas;
             }
 
             canvasToOffScreenCanvas(canvas: HTMLCanvasElement): OffscreenCanvas {

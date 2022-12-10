@@ -1,4 +1,4 @@
-import ComboPaintDocument from "./ComboPaintDocument";
+import ComboPaintDocument from "./Document/ComboPaintDocument";
 import {DocViewer} from "./DocViewer";
 
 export default class ComboPaint {

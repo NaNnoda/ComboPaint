@@ -1,12 +1,12 @@
-import {CanvasWrapper} from "./CanvasWrapper";
-import {CPLayer} from "./Layers/CPLayer";
-import {BackgroundLayer} from "./Layers/BackgroundLayer";
+import {CanvasWrapper} from "../CanvasWrapper";
+import {CPLayer} from "../Layers/CPLayer";
+import {BackgroundLayer} from "../Layers/BackgroundLayer";
+import {OffScreenCanvasWrapper2D} from "../OffScreenCanvasWrapper2D";
+import {nullLayer} from "../Layers/NullLayer";
 
-export default class ComboPaintDocument extends CanvasWrapper {
+export default class ComboPaintDocument extends OffScreenCanvasWrapper2D {
     layers: CPLayer[] = [];
-    background: BackgroundLayer;
-
-    selectedLayer: CPLayer | null = null;
+    selectedLayer: CPLayer = nullLayer;
 
     get height() {
         return this.canvas.height;
@@ -24,16 +24,16 @@ export default class ComboPaintDocument extends CanvasWrapper {
         this.canvas.width = width;
     }
 
-    constructor(width: number = 100, height: number = 100) {
-        super();
-        this.width = width;
-        this.height = height;
-        this.background = new BackgroundLayer(width, height, "checkerboard");
+    constructor(size: [number, number], layers: CPLayer[] = []) {
+        super(size[0], size[1]);
+
+        this.addLayers(...layers);
+        // this.background = new BackgroundLayer(width, height, "checkerboard");
     }
 
     addLayer(layer: CPLayer, index: number = this.layers.length) {
         this.layers.splice(index, 0, layer);
-        if (this.selectedLayer == null) {
+        if (this.selectedLayer == nullLayer) {
             this.selectedLayer = layer;
         }
     }
@@ -42,10 +42,14 @@ export default class ComboPaintDocument extends CanvasWrapper {
         for (let layer of layers) {
             this.addLayer(layer);
         }
+        if (this.selectedLayer == null && layers.length > 0) {
+            this.selectedLayer = layers[0];
+        }
     }
 
     render() {
-        this.drawLayer(this.background);
+        // this.drawLayer(this.background);
+        this.clear();
 
         for (let layer of this.layers) {
             if (layer.visible) {
@@ -61,8 +65,5 @@ export default class ComboPaintDocument extends CanvasWrapper {
         this.ctx.drawImage(layer.canvas, 0, 0);
     }
 
-    toImage() {
-        return this.canvas.toDataURL();
-    }
 }
 

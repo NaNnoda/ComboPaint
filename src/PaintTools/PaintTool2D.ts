@@ -7,6 +7,9 @@ export class PaintTool2D extends PaintTool {
 
 
     get ctx() {
+        if (this.layer === null) {
+            throw new Error("Layer not set");
+        }
         return this.layer.ctx;
     }
 

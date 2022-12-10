@@ -1,42 +1,59 @@
-import ComboPaintDocument from "./ComboPaintDocument";
+import ComboPaintDocument from "./Document/ComboPaintDocument";
 import {CanvasWrapper} from "./CanvasWrapper";
 import {Vec2} from "./MathUtils/Vec2";
 import {PaintToolEventHandler} from "./Events/PaintToolEventHandler";
-import {PointerEventHandler, PointerPoint} from "./Events/PointerEventHandler";
 import {ViewerEventsHandler} from "./Events/ViewerEventsHandler";
+import {BackgroundLayer} from "./Layers/BackgroundLayer";
+import {GlobalValues} from "./GlobalValues";
+import {CPLayer} from "./Layers/CPLayer";
+import {nullLayer, NullLayer} from "./Layers/NullLayer";
 
 /**
  * Class that renders a ComboPaintDocument to a canvas.
  * and also handles user input.
  */
 export class DocViewer extends CanvasWrapper {
-    _doc: ComboPaintDocument;
+    // _doc: ComboPaintDocument;
 
     _state: TranslateState;
 
     paintToolEventHandler: PaintToolEventHandler;
     events: ViewerEventsHandler;
 
-    constructor(canvas: HTMLCanvasElement, doc: ComboPaintDocument) {
+    background: CPLayer = NullLayer.getInstance();
+
+    constructor(canvas: HTMLCanvasElement) {
         super(canvas);
-        this._doc = doc;
-        this.setDocument(doc);
-        this._state = new TranslateState();
-        let offset = new Vec2(0, 0);
-        let scale = 3;
-        offset.x = (this.width) / 2 - this.doc.width / 2 * scale;
-        offset.y = (this.height) / 2 - this.doc.height / 2 * scale;
-        this.state.offset = offset;
-        this.state.scale = new Vec2(scale);
+
 
         this.paintToolEventHandler = new PaintToolEventHandler();
         this.events = new ViewerEventsHandler(this);
+
         this.setUpEventHandlers();
+
+        this._state = new TranslateState();
+
+        if (this.doc) {
+            console.log("Doc is not null");
+            console.log(this.doc);
+            this.viewDoc(this.doc);
+        }
+    }
+
+    viewDoc(doc: ComboPaintDocument) {
+        this._state = new TranslateState();
+        let offset = new Vec2(0, 0);
+        let scale = 3;
+        offset.x = (this.width) / 2 - doc.width / 2 * scale;
+        offset.y = (this.height) / 2 - doc.height / 2 * scale;
+        this.state.offset = offset;
+        this.state.scale = new Vec2(scale);
+        console.log("setting background");
+        this.background = new BackgroundLayer(doc.width, doc.height);
     }
 
     setUpEventHandlers() {
         this.events.registerEvent("midDrag", (e: PointerEvent) => {
-
             let offset = this.state.offset;
             let lastE = this.events.lastMousePoint;
             if (lastE === null) {
@@ -66,15 +83,9 @@ export class DocViewer extends CanvasWrapper {
         });
     }
 
-
-    setDocument(doc: ComboPaintDocument) {
-        this._doc = doc;
-    }
-
     render() {
         console.log("Rendering");
-        // set background color
-        this.ctx.fillStyle = "#c4c4c4";
+        this.ctx.fillStyle = "#cfcfcf";
         this.ctx.fillRect(0, 0, this.width, this.height);
         // this.renderBorder();
         this.renderBackground();
@@ -87,7 +98,7 @@ export class DocViewer extends CanvasWrapper {
     }
 
     get doc() {
-        return this._doc;
+        return GlobalValues.currDoc;
     }
 
     viewToDocCoords(x: number, y: number) {
@@ -150,25 +161,6 @@ export class DocViewer extends CanvasWrapper {
         // if scale is bigger than 1, don't use image smoothing
         this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1);
         this.ctx.drawImage(this.doc.canvas, 0, 0);
-        // if scale is bigger than 9, draw a grid
-        // if (this.scaleBiggerThan(9)) {
-        //     // invert color
-        //     // this.ctx.globalCompositeOperation = "d";
-        //     this.ctx.fillStyle = "rgba(255,255,255,0.5)";
-        //     this.ctx.lineWidth = 0.05;
-        //     for (let i = 0; i < this.doc.width; i++) {
-        //         this.ctx.beginPath();
-        //         this.ctx.moveTo(i, 0);
-        //         this.ctx.lineTo(i, this.doc.height);
-        //         this.ctx.stroke();
-        //     }
-        //     for (let i = 0; i < this.doc.height; i++) {
-        //         this.ctx.beginPath();
-        //         this.ctx.moveTo(0, i);
-        //         this.ctx.lineTo(this.doc.width, i);
-        //         this.ctx.stroke();
-        //     }
-        // }
         this.ctx.restore();
     }
 
@@ -187,6 +179,21 @@ export class DocViewer extends CanvasWrapper {
             this.doc.width * this.state.scale.x,
             this.doc.height * this.state.scale.y + 1
         );
+        this.ctx.restore();
+
+
+        this.ctx.save();
+        this.ctx.translate(this.state.offset.x, this.state.offset.y);
+        this.ctx.scale(this.state.scale.x, this.state.scale.y);
+        // if scale is bigger than 1, don't use image smoothing
+        this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1)
+        if (this.background == nullLayer){
+            console.log("Background is null");
+
+        }else{
+            this.ctx.drawImage(this.background.canvas, 0, 0);
+        }
+
         this.ctx.restore();
     }
 

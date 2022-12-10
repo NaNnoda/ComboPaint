@@ -1,29 +1,29 @@
 import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {PointerPoint} from "../Events/PointerEventHandler";
 import {CPLayer} from "../Layers/CPLayer";
-import ComboPaintDocument from "../ComboPaintDocument";
+import ComboPaintDocument from "../Document/ComboPaintDocument";
 import {DocViewer} from "../DocViewer";
+import {GlobalValues} from "../GlobalValues";
 
 export class PaintTool {
     name: string;
     _eventHandler: PaintToolEventHandler | null = null;
 
-    selectedLayer: CPLayer | null = null;
-
-    _layer: CPLayer | null = null;
-    _doc: ComboPaintDocument | null = null;
-    _viewer: DocViewer | null = null;
-
-    setLayer(layer: CPLayer) {
-        console.debug("Setting layer to " + layer.name);
-        this._layer = layer;
-    }
+    // setLayer(layer: CPLayer) {
+    //     console.debug("Setting layer to " + layer.name);
+    //     this._layer = layer;
+    // }
 
     get layer() {
-        if (this._layer === null) {
+        // if (this._layer === null) {
+        //     throw new Error("Layer not set");
+        // }
+        // return this._layer;
+        if (GlobalValues.currDoc.selectedLayer === null) {
             throw new Error("Layer not set");
         }
-        return this._layer;
+
+        return GlobalValues.currDoc.selectedLayer;
     }
 
     get eventHandler() {
@@ -40,29 +40,18 @@ export class PaintTool {
     }
 
     get canvas() {
+        if (this.layer === null) {
+            throw new Error("Layer not set");
+        }
         return this.layer.canvas;
     }
 
     get doc() {
-        if (this._doc === null) {
-            throw new Error("Doc not set");
-        }
-        return this._doc;
-    }
-
-    set doc(doc: ComboPaintDocument) {
-        this._doc = doc;
+        return GlobalValues.currDoc;
     }
 
     get viewer() {
-        if (this._viewer === null) {
-            throw new Error("Viewer not set");
-        }
-        return this._viewer;
-    }
-
-    set viewer(viewer: DocViewer) {
-        this._viewer = viewer;
+        return GlobalValues.viewer;
     }
 
     constructor(eventHandler: PaintToolEventHandler | null = null, name: string | null = null) {
@@ -70,14 +59,6 @@ export class PaintTool {
             name = this.constructor.name;
         }
         this.name = name;
-    }
-
-    static createFromStandardDoc(eventHandler: PaintToolEventHandler, doc: ComboPaintDocument, viewer: DocViewer) {
-        let tool = new this(eventHandler);
-        tool.doc = doc;
-        tool.viewer = viewer;
-        tool.eventHandler = viewer.paintToolEventHandler;
-        return tool;
     }
 
     onDown(point: PointerPoint) {

@@ -1,4 +1,4 @@
-import ComboPaintDocument from "./ComboPaintDocument";
+import ComboPaintDocument from "./Document/ComboPaintDocument";
 import {CPLayer} from "./Layers/CPLayer";
 
 export class DocEditor {

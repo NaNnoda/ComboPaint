@@ -8,6 +8,7 @@ import {CPLayer} from "./Layers/CPLayer";
 import {nullLayer, NullLayer} from "./Layers/NullLayer";
 import {HTMLCanvasWrapper2D} from "./CanvasWrapper/HTMLCanvasWrapper2D";
 import {SmoothNumber} from "./SmoothNumber";
+import {CPLayer2D} from "./Layers/CPLayer2D";
 
 /**
  * Class that renders a ComboPaintDocument to a canvas.
@@ -19,7 +20,8 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
     paintToolEventHandler: PaintToolEventHandler;
     events: ViewerEventsHandler;
 
-    background: CPLayer = NullLayer.getInstance();
+    docBackground: CPLayer = NullLayer.getInstance();
+    docWrapper: CPLayer2D = nullLayer;
 
     constructor(canvas: HTMLCanvasElement) {
         super(canvas);
@@ -48,7 +50,8 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
         this.state.docScale = scale;
         this.state._docScaleTarget = scale;
         console.log("setting background");
-        this.background = new BackgroundLayer(doc.width, doc.height);
+        this.docBackground = new BackgroundLayer(doc.width, doc.height);
+        this.docWrapper = new CPLayer2D(doc.width, doc.height, "DocWrapper");
     }
 
     setUpEventHandlers() {
@@ -170,11 +173,30 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
         this.ctx.translate(this.state.docOffset.x, this.state.docOffset.y);
         this.ctx.scale(this.state.docScale, this.state.docScale);
         // if scale is bigger than 1, don't use image smoothing
-        this.ctx.imageSmoothingEnabled = !(this.state.docScale > 1);
+        // this.ctx.imageSmoothingEnabled = !(this.state.docScale > 1);
+        this.ctx.imageSmoothingEnabled = false;
         if (this.doc.isDirty) {
             this.doc.render();
         }
-        this.ctx.drawImage(this.doc.canvas, 0, 0);
+        this.docWrapper.clear();
+        // If scale is smaller than 1, apply blur
+        let blueStart = 1;
+        if (this.state.docScale < blueStart) {
+            let blur = (1 / this.state.docScale - 1) / 2;
+            // this.docWrapper.ctx.filter = "blur(" + (1 / this.state.docScale - (1 / blueStart)) + "px)";
+            this.docWrapper.ctx.filter = "blur(" + blur + "px)";
+        } else {
+            this.docWrapper.ctx.filter = "none";
+        }
+        // Draw the document
+        if (this.docBackground == nullLayer) {
+            console.log("Background is null");
+        } else {
+            this.docWrapper.ctx.drawImage(this.docBackground.canvas, 0, 0);
+        }
+        this.docWrapper.ctx.drawImage(this.doc.canvas, 0, 0);
+        // Draw the wrapper
+        this.ctx.drawImage(this.docWrapper.canvas, 0, 0);
         this.ctx.restore();
     }
 
@@ -190,20 +212,6 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
             this.doc.width * this.state.docScale,
             this.doc.height * this.state.docScale + 1
         );
-        this.ctx.restore();
-
-        // Draw background layer
-        this.ctx.save();
-        this.ctx.translate(this.state.docOffset.x, this.state.docOffset.y);
-        this.ctx.scale(this.state.docScale, this.state.docScale);
-        // if scale is bigger than 1, don't use image smoothing
-        this.ctx.imageSmoothingEnabled = !(this.state.docScale > 1)
-        if (this.background == nullLayer) {
-            console.log("Background is null");
-
-        } else {
-            this.ctx.drawImage(this.background.canvas, 0, 0);
-        }
         this.ctx.restore();
     }
 
@@ -238,7 +246,6 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
                 this.height
             );
             this.ctx.fillStyle = color2;
-
             let barYHeight = this.height * this.height / (this.doc.height * this.state.docScale);
             let barYPos = -this.state.docOffset.y * this.height / (this.doc.height * this.state.docScale);
             this.ctx.fillRect(
@@ -250,49 +257,58 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
         }
     }
 
-    renderForeground() {
-        if (this.state.docScale > 9) {
-            this.ctx.save();
-            // Draw a grid
-            this.ctx.strokeStyle = "rgba(0,0,0,0.5)";
-            this.ctx.lineWidth = 0.5;
-            let startingX = Math.max(
-                this.state.docOffset.x % this.state.docScale,
-                this.state.docOffset.x
-            );
-            let startingY = Math.max(
-                this.state.docOffset.y % this.state.docScale,
-                this.state.docOffset.y
-            );
+    drawPixelGrid(color: string, width: number) {
+        this.ctx.save();
+        // Draw a grid
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = width;
+        let startingX = Math.max(
+            this.state.docOffset.x % this.state.docScale,
+            this.state.docOffset.x
+        );
+        let startingY = Math.max(
+            this.state.docOffset.y % this.state.docScale,
+            this.state.docOffset.y
+        );
 
-            let endX = (this.state.docOffset.x + this.doc.width * this.state.docScale);
-            if (endX > this.width) {
-                endX = this.width;
-            }
-            let endY = (this.state.docOffset.y + this.doc.height * this.state.docScale);
-            if (endY > this.height) {
-                endY = this.height;
-            }
-
-            for (let i = startingX; i < endX; i += this.state.docScale) {
-                this.ctx.beginPath();
-                this.ctx.moveTo(i, startingY);
-                this.ctx.lineTo(i, endY);
-                this.ctx.stroke();
-            }
-
-            for (let i = startingY; i < endY; i += this.state.docScale) {
-                this.ctx.beginPath();
-                this.ctx.moveTo(startingX, i);
-                this.ctx.lineTo(endX, i);
-                this.ctx.stroke();
-            }
-            this.ctx.restore();
+        let endX = (this.state.docOffset.x + this.doc.width * this.state.docScale);
+        if (endX > this.width) {
+            endX = this.width;
+        }
+        let endY = (this.state.docOffset.y + this.doc.height * this.state.docScale);
+        if (endY > this.height) {
+            endY = this.height;
         }
 
-        this.drawScrollBars(10,
+        for (let i = startingX; i < endX; i += this.state.docScale) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(i, startingY);
+            this.ctx.lineTo(i, endY);
+            this.ctx.stroke();
+        }
+
+        for (let i = startingY; i < endY; i += this.state.docScale) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(startingX, i);
+            this.ctx.lineTo(endX, i);
+            this.ctx.stroke();
+        }
+        this.ctx.restore();
+    }
+
+    renderForeground() {
+        if (this.state.docScale > 10) {
+            this.drawPixelGrid(
+                "rgba(0, 0, 0, 0.2)",
+                0.5
+            );
+        }
+
+        this.drawScrollBars(
+            10,
             "#ffffff",
-            "#a9a9a9");
+            "#a9a9a9"
+        );
     }
 }
 

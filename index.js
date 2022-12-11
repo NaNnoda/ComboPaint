@@ -12900,11 +12900,35 @@ var CPLayer = class extends OffScreenCanvasWrapper {
   }
 };
 
+// src/Layers/CPLayer2D.ts
+var CPLayer2D = class extends CPLayer {
+  constructor(width, height, name = "New Layer") {
+    super(width, height, name, "2d");
+  }
+  get ctx() {
+    return super.ctx;
+  }
+  render() {
+  }
+  resize(width, height, offsetX, offsetY) {
+    this.ctx.drawImage(this.canvas, offsetX, offsetY);
+  }
+  fill(color) {
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(0, 0, this.width, this.height);
+    return this;
+  }
+  clear() {
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    return this;
+  }
+};
+
 // src/Layers/NullLayer.ts
-var _NullLayer = class extends CPLayer {
+var _NullLayer = class extends CPLayer2D {
   static getInstance() {
     if (!_NullLayer.instance) {
-      _NullLayer.instance = new _NullLayer(1, 1, "Null Layer", "2d");
+      _NullLayer.instance = new _NullLayer(1, 1, "Null Layer");
     }
     return _NullLayer.instance;
   }
@@ -13220,26 +13244,6 @@ var ViewerEventsHandler = class extends EventHandler {
   }
 };
 
-// src/Layers/CPLayer2D.ts
-var CPLayer2D = class extends CPLayer {
-  constructor(width, height, name = "New Layer") {
-    super(width, height, name, "2d");
-  }
-  get ctx() {
-    return super.ctx;
-  }
-  render() {
-  }
-  resize(width, height, offsetX, offsetY) {
-    this.ctx.drawImage(this.canvas, offsetX, offsetY);
-  }
-  fill(color) {
-    this.ctx.fillStyle = color;
-    this.ctx.fillRect(0, 0, this.width, this.height);
-    return this;
-  }
-};
-
 // src/Layers/BackgroundLayer.ts
 var BackgroundLayer = class extends CPLayer2D {
   constructor(width, height, fillStyle = "checkerboard") {
@@ -13359,7 +13363,8 @@ var SmoothNumber = class {
 var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
   constructor(canvas) {
     super(canvas);
-    this.background = NullLayer.getInstance();
+    this.docBackground = NullLayer.getInstance();
+    this.docWrapper = nullLayer;
     this.paintToolEventHandler = new PaintToolEventHandler();
     this.events = new ViewerEventsHandler(this);
     this.setUpEventHandlers();
@@ -13380,7 +13385,8 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
     this.state.docScale = scale;
     this.state._docScaleTarget = scale;
     console.log("setting background");
-    this.background = new BackgroundLayer(doc.width, doc.height);
+    this.docBackground = new BackgroundLayer(doc.width, doc.height);
+    this.docWrapper = new CPLayer2D(doc.width, doc.height, "DocWrapper");
   }
   setUpEventHandlers() {
     this.events.registerEvent("midDrag", (e) => {
@@ -13478,11 +13484,25 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
     this.ctx.save();
     this.ctx.translate(this.state.docOffset.x, this.state.docOffset.y);
     this.ctx.scale(this.state.docScale, this.state.docScale);
-    this.ctx.imageSmoothingEnabled = !(this.state.docScale > 1);
+    this.ctx.imageSmoothingEnabled = false;
     if (this.doc.isDirty) {
       this.doc.render();
     }
-    this.ctx.drawImage(this.doc.canvas, 0, 0);
+    this.docWrapper.clear();
+    let blueStart = 1;
+    if (this.state.docScale < blueStart) {
+      let blur = (1 / this.state.docScale - 1) / 2;
+      this.docWrapper.ctx.filter = "blur(" + blur + "px)";
+    } else {
+      this.docWrapper.ctx.filter = "none";
+    }
+    if (this.docBackground == nullLayer) {
+      console.log("Background is null");
+    } else {
+      this.docWrapper.ctx.drawImage(this.docBackground.canvas, 0, 0);
+    }
+    this.docWrapper.ctx.drawImage(this.doc.canvas, 0, 0);
+    this.ctx.drawImage(this.docWrapper.canvas, 0, 0);
     this.ctx.restore();
   }
   renderBackground() {
@@ -13496,16 +13516,6 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
       this.doc.width * this.state.docScale,
       this.doc.height * this.state.docScale + 1
     );
-    this.ctx.restore();
-    this.ctx.save();
-    this.ctx.translate(this.state.docOffset.x, this.state.docOffset.y);
-    this.ctx.scale(this.state.docScale, this.state.docScale);
-    this.ctx.imageSmoothingEnabled = !(this.state.docScale > 1);
-    if (this.background == nullLayer) {
-      console.log("Background is null");
-    } else {
-      this.ctx.drawImage(this.background.canvas, 0, 0);
-    }
     this.ctx.restore();
   }
   drawScrollBars(barWidth, color1, color2) {
@@ -13546,40 +13556,46 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
       );
     }
   }
+  drawPixelGrid(color, width) {
+    this.ctx.save();
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = width;
+    let startingX = Math.max(
+      this.state.docOffset.x % this.state.docScale,
+      this.state.docOffset.x
+    );
+    let startingY = Math.max(
+      this.state.docOffset.y % this.state.docScale,
+      this.state.docOffset.y
+    );
+    let endX = this.state.docOffset.x + this.doc.width * this.state.docScale;
+    if (endX > this.width) {
+      endX = this.width;
+    }
+    let endY = this.state.docOffset.y + this.doc.height * this.state.docScale;
+    if (endY > this.height) {
+      endY = this.height;
+    }
+    for (let i = startingX; i < endX; i += this.state.docScale) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(i, startingY);
+      this.ctx.lineTo(i, endY);
+      this.ctx.stroke();
+    }
+    for (let i = startingY; i < endY; i += this.state.docScale) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(startingX, i);
+      this.ctx.lineTo(endX, i);
+      this.ctx.stroke();
+    }
+    this.ctx.restore();
+  }
   renderForeground() {
-    if (this.state.docScale > 9) {
-      this.ctx.save();
-      this.ctx.strokeStyle = "rgba(0,0,0,0.5)";
-      this.ctx.lineWidth = 0.5;
-      let startingX = Math.max(
-        this.state.docOffset.x % this.state.docScale,
-        this.state.docOffset.x
+    if (this.state.docScale > 10) {
+      this.drawPixelGrid(
+        "rgba(0, 0, 0, 0.2)",
+        0.5
       );
-      let startingY = Math.max(
-        this.state.docOffset.y % this.state.docScale,
-        this.state.docOffset.y
-      );
-      let endX = this.state.docOffset.x + this.doc.width * this.state.docScale;
-      if (endX > this.width) {
-        endX = this.width;
-      }
-      let endY = this.state.docOffset.y + this.doc.height * this.state.docScale;
-      if (endY > this.height) {
-        endY = this.height;
-      }
-      for (let i = startingX; i < endX; i += this.state.docScale) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(i, startingY);
-        this.ctx.lineTo(i, endY);
-        this.ctx.stroke();
-      }
-      for (let i = startingY; i < endY; i += this.state.docScale) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(startingX, i);
-        this.ctx.lineTo(endX, i);
-        this.ctx.stroke();
-      }
-      this.ctx.restore();
     }
     this.drawScrollBars(
       10,
@@ -13861,12 +13877,15 @@ var PaintTool2D = class extends PaintTool {
 var BasicPen = class extends PaintTool2D {
   constructor() {
     super();
+    this._fillStyle = "black";
+    this._width = 2;
   }
   onPressedMove(point) {
     super.onPressedMove(point);
     let lastPoint = this.eventHandler.lastPoint;
     if (lastPoint !== null) {
-      this.setFillRGB(0, 0, 0);
+      this.setFillStyle(this._fillStyle);
+      this.ctx.lineWidth = this._width;
       this.drawLine(lastPoint.x, lastPoint.y, point.x, point.y);
       this.commitChanges();
     }

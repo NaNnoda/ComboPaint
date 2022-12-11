@@ -1,5 +1,5 @@
 import ComboPaintDocument from "./Document/ComboPaintDocument";
-import {DocViewer} from "./DocViewer";
+import {DocCanvasViewer} from "./DocCanvasViewer";
 import {PaintTool} from "./PaintTools/PaintTool";
 import {CPLayer} from "./Layers/CPLayer";
 import {nullLayer, NullLayer} from "./Layers/NullLayer";
@@ -12,7 +12,7 @@ export class GlobalValues {
     static _allDocs: ComboPaintDocument[] = [];
     static _allDocsSet: Set<ComboPaintDocument> = new Set<ComboPaintDocument>();
     static _currTool: PaintTool;
-    static _viewer: DocViewer;
+    static _viewer: DocCanvasViewer;
 
     static get currDoc(): ComboPaintDocument {
         if (this._currDoc === null) {
@@ -81,7 +81,7 @@ export class GlobalValues {
         return GlobalValues._viewer;
     }
 
-    static set viewer(viewer: DocViewer) {
+    static set viewer(viewer: DocCanvasViewer) {
         GlobalValues._viewer = viewer;
     }
 
@@ -112,7 +112,7 @@ export class GlobalValues {
         if (tool === null) {
             tool = new BasicPen();
         }
-        GlobalValues.viewer = new DocViewer(canvas);
+        GlobalValues.viewer = new DocCanvasViewer(canvas);
         GlobalValues.currDoc = doc;
         if (this.currDoc.selectedLayer !== null) {
             this.currLayer = this.currDoc.selectedLayer;

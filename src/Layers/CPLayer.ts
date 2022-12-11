@@ -1,5 +1,3 @@
-import {HTMLCanvasWrapper} from "../CanvasWrapper/HTMLCanvasWrapper";
-import {OffScreenCanvasWrapper2D} from "../CanvasWrapper/OffScreenCanvasWrapper2D";
 import {OffScreenCanvasWrapper} from "../CanvasWrapper/OffScreenCanvasWrapper";
 
 export abstract class CPLayer extends OffScreenCanvasWrapper {
@@ -15,7 +13,6 @@ export abstract class CPLayer extends OffScreenCanvasWrapper {
         this.name = name;
         this.visible = true;
         this.opacity = 1;
-        // this.blendMode = "normal";
         this.blendMode = "source-over";
     }
 }

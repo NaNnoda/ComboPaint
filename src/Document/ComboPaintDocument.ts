@@ -1,6 +1,4 @@
-import {HTMLCanvasWrapper} from "../CanvasWrapper/HTMLCanvasWrapper";
 import {CPLayer} from "../Layers/CPLayer";
-import {BackgroundLayer} from "../Layers/BackgroundLayer";
 import {OffScreenCanvasWrapper2D} from "../CanvasWrapper/OffScreenCanvasWrapper2D";
 import {nullLayer} from "../Layers/NullLayer";
 

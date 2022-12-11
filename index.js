@@ -13261,7 +13261,7 @@ var BackgroundLayer = class extends CPLayer2D {
   }
   render() {
     if (this.fillStyle == "checkerboard") {
-      this.drawCheckerboard("#ffffff", "#cbcbcb", 10);
+      this.drawCheckerboard("#ffffff", "#ddddde", 20);
     } else {
       this.ctx.fillStyle = this.fillStyle;
       this.ctx.fillRect(0, 0, this.width, this.height);
@@ -13321,15 +13321,49 @@ var HTMLCanvasWrapper2D = class extends HTMLCanvasWrapper {
   }
 };
 
-// src/DocViewer.ts
-var DocViewer = class extends HTMLCanvasWrapper2D {
+// src/SmoothNumber.ts
+var SmoothNumber = class {
+  constructor(value, target, speed) {
+    this._value = value;
+    this._target = target;
+    this._speed = speed;
+  }
+  get value() {
+    this.update();
+    return this._value;
+  }
+  set value(value) {
+    this._value = value;
+  }
+  get target() {
+    return this._target;
+  }
+  set target(value) {
+    this._target = value;
+  }
+  get speed() {
+    return this._speed;
+  }
+  set speed(value) {
+    this._speed = value;
+  }
+  update() {
+    this._value += (this._target - this._value) * this.speed;
+    if (Math.abs(this._target - this._value) < 0.01) {
+      this._value = this._target;
+    }
+  }
+};
+
+// src/DocCanvasViewer.ts
+var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
   constructor(canvas) {
     super(canvas);
     this.background = NullLayer.getInstance();
     this.paintToolEventHandler = new PaintToolEventHandler();
     this.events = new ViewerEventsHandler(this);
     this.setUpEventHandlers();
-    this._state = new TranslateState();
+    this._state = new ViewerState();
     if (this.doc) {
       console.log("Doc is not null");
       console.log(this.doc);
@@ -13337,27 +13371,28 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
     }
   }
   viewDoc(doc) {
-    this._state = new TranslateState();
+    this._state = new ViewerState();
     let offset = new Vec2(0, 0);
     let scale = 3;
     offset.x = this.width / 2 - doc.width / 2 * scale;
     offset.y = this.height / 2 - doc.height / 2 * scale;
-    this.state.offset = offset;
-    this.state.scale = new Vec2(scale);
+    this.state.docOffset = offset;
+    this.state.docScale = scale;
+    this.state._docScaleTarget = scale;
     console.log("setting background");
     this.background = new BackgroundLayer(doc.width, doc.height);
   }
   setUpEventHandlers() {
     this.events.registerEvent("midDrag", (e) => {
-      let offset = this.state.offset;
+      let offset = this.state.docOffset;
       let lastE = this.events.lastMousePoint;
       if (lastE === null) {
         return;
       }
       let dx = e.clientX - lastE.clientX;
       let dy = e.clientY - lastE.clientY;
-      this.state.offset = offset.addXY(dx, dy);
-      this.render();
+      this.state.docOffset = offset.addXY(dx, dy);
+      this.update();
     });
     this.events.registerEvent("wheel", (e) => {
       let isTouchPad = e.deltaMode === 1;
@@ -13367,16 +13402,29 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
         return;
       }
       this.zoomRelativeToMouse(1 - e.deltaY / 1e3);
-      this.render();
+      this.update();
     });
   }
   render() {
+    if (!this.isDirty) {
+      console.log("not dirty");
+      return;
+    }
     console.debug("Rendering");
     this.ctx.fillStyle = "#cfcfcf";
     this.ctx.fillRect(0, 0, this.width, this.height);
     this.renderBackground();
     this.renderDoc();
     this.renderForeground();
+    this.isDirty = false;
+    if (this.isDirty) {
+      window.requestAnimationFrame(this.render.bind(this));
+    }
+  }
+  update() {
+    console.debug("updating");
+    this.isDirty = true;
+    this.render();
   }
   get state() {
     return this._state;
@@ -13386,8 +13434,8 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
   }
   viewToDocCoords(x, y) {
     return new Vec2(
-      (x - this.state.offset.x) / this.state.scale.x,
-      (y - this.state.offset.y) / this.state.scale.y
+      (x - this.state.docOffset.x) / this.state.docScale,
+      (y - this.state.docOffset.y) / this.state.docScale
     );
   }
   zoomRelativeToMouse(zoom) {
@@ -13399,46 +13447,43 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
     this.relativeZoom(x, y, zoom);
   }
   offsetCanvas(x, y) {
-    this.state.offset = this.state.offset.addXY(x, y);
+    this.state.docOffset = this.state.docOffset.addXY(x, y);
   }
   relativeZoom(x, y, zoom) {
-    if (this.state.scale.x > 100) {
+    if (this.state.docScale > 100) {
       if (zoom > 1) {
         return;
       }
     }
-    let oldScale = this.state.scale;
-    let newScale = new Vec2(oldScale.x * zoom, oldScale.y * zoom);
-    let oldOffset = this.state.offset;
+    let oldScale = this.state.docScale;
+    let newScale = oldScale * zoom;
+    let oldOffset = this.state.docOffset;
     let newOffset = new Vec2(
       oldOffset.x + (x - oldOffset.x) * (1 - zoom),
       oldOffset.y + (y - oldOffset.y) * (1 - zoom)
     );
-    this.state.scale = newScale;
-    this.state.offset = newOffset;
+    this.state.docScale = newScale;
+    this.state.docOffset = newOffset;
   }
   get mousePos() {
     return this.events.lastMousePoint;
   }
   docToViewCoords(x, y) {
     return new Vec2(
-      x * this.state.scale.x + this.state.offset.x,
-      y * this.state.scale.y + this.state.offset.y
+      x * this.state.docScale + this.state.docOffset.x,
+      y * this.state.docScale + this.state.docOffset.y
     );
   }
   renderDoc() {
     this.ctx.save();
-    this.ctx.translate(this.state.offset.x, this.state.offset.y);
-    this.ctx.scale(this.state.scale.x, this.state.scale.y);
-    this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1);
+    this.ctx.translate(this.state.docOffset.x, this.state.docOffset.y);
+    this.ctx.scale(this.state.docScale, this.state.docScale);
+    this.ctx.imageSmoothingEnabled = !(this.state.docScale > 1);
     if (this.doc.isDirty) {
       this.doc.render();
     }
     this.ctx.drawImage(this.doc.canvas, 0, 0);
     this.ctx.restore();
-  }
-  scaleBiggerThan(n) {
-    return this.state.scale.x > n || this.state.scale.y > n;
   }
   renderBackground() {
     this.ctx.save();
@@ -13446,16 +13491,16 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
     this.ctx.strokeStyle = "black";
     this.ctx.lineWidth = 2;
     this.ctx.strokeRect(
-      this.state.offset.x,
-      this.state.offset.y + 1,
-      this.doc.width * this.state.scale.x,
-      this.doc.height * this.state.scale.y + 1
+      this.state.docOffset.x,
+      this.state.docOffset.y + 1,
+      this.doc.width * this.state.docScale,
+      this.doc.height * this.state.docScale + 1
     );
     this.ctx.restore();
     this.ctx.save();
-    this.ctx.translate(this.state.offset.x, this.state.offset.y);
-    this.ctx.scale(this.state.scale.x, this.state.scale.y);
-    this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1);
+    this.ctx.translate(this.state.docOffset.x, this.state.docOffset.y);
+    this.ctx.scale(this.state.docScale, this.state.docScale);
+    this.ctx.imageSmoothingEnabled = !(this.state.docScale > 1);
     if (this.background == nullLayer) {
       console.log("Background is null");
     } else {
@@ -13464,7 +13509,7 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
     this.ctx.restore();
   }
   drawScrollBars(barWidth, color1, color2) {
-    if (this.doc.width * this.state.scale.x > this.width) {
+    if (this.doc.width * this.state.docScale > this.width) {
       this.ctx.fillStyle = color1;
       this.ctx.fillRect(
         0,
@@ -13473,8 +13518,8 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
         barWidth
       );
       this.ctx.fillStyle = color2;
-      let barXWidth = this.width * this.width / (this.doc.width * this.state.scale.x);
-      let barXPos = -this.state.offset.x * this.width / (this.doc.width * this.state.scale.x);
+      let barXWidth = this.width * this.width / (this.doc.width * this.state.docScale);
+      let barXPos = -this.state.docOffset.x * this.width / (this.doc.width * this.state.docScale);
       this.ctx.fillRect(
         barXPos,
         this.height - barWidth,
@@ -13482,7 +13527,7 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
         barWidth
       );
     }
-    if (this.doc.height * this.state.scale.y > this.height) {
+    if (this.doc.height * this.state.docScale > this.height) {
       this.ctx.fillStyle = color1;
       this.ctx.fillRect(
         this.width - barWidth,
@@ -13491,8 +13536,8 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
         this.height
       );
       this.ctx.fillStyle = color2;
-      let barYHeight = this.height * this.height / (this.doc.height * this.state.scale.y);
-      let barYPos = -this.state.offset.y * this.height / (this.doc.height * this.state.scale.y);
+      let barYHeight = this.height * this.height / (this.doc.height * this.state.docScale);
+      let barYPos = -this.state.docOffset.y * this.height / (this.doc.height * this.state.docScale);
       this.ctx.fillRect(
         this.width - barWidth,
         barYPos,
@@ -13502,33 +13547,33 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
     }
   }
   renderForeground() {
-    if (this.scaleBiggerThan(9)) {
+    if (this.state.docScale > 9) {
       this.ctx.save();
       this.ctx.strokeStyle = "rgba(0,0,0,0.5)";
       this.ctx.lineWidth = 0.5;
       let startingX = Math.max(
-        this.state.offset.x % this.state.scale.x,
-        this.state.offset.x
+        this.state.docOffset.x % this.state.docScale,
+        this.state.docOffset.x
       );
       let startingY = Math.max(
-        this.state.offset.y % this.state.scale.y,
-        this.state.offset.y
+        this.state.docOffset.y % this.state.docScale,
+        this.state.docOffset.y
       );
-      let endX = this.state.offset.x + this.doc.width * this.state.scale.x;
+      let endX = this.state.docOffset.x + this.doc.width * this.state.docScale;
       if (endX > this.width) {
         endX = this.width;
       }
-      let endY = this.state.offset.y + this.doc.height * this.state.scale.y;
+      let endY = this.state.docOffset.y + this.doc.height * this.state.docScale;
       if (endY > this.height) {
         endY = this.height;
       }
-      for (let i = startingX; i < endX; i += this.state.scale.x) {
+      for (let i = startingX; i < endX; i += this.state.docScale) {
         this.ctx.beginPath();
         this.ctx.moveTo(i, startingY);
         this.ctx.lineTo(i, endY);
         this.ctx.stroke();
       }
-      for (let i = startingY; i < endY; i += this.state.scale.y) {
+      for (let i = startingY; i < endY; i += this.state.docScale) {
         this.ctx.beginPath();
         this.ctx.moveTo(startingX, i);
         this.ctx.lineTo(endX, i);
@@ -13543,10 +13588,31 @@ var DocViewer = class extends HTMLCanvasWrapper2D {
     );
   }
 };
-var TranslateState = class {
+var ViewerState = class {
   constructor() {
-    this.offset = new Vec2(0, 0);
-    this.scale = new Vec2(1, 1);
+    this._animationSmooth = new SmoothNumber(1, 1, 0.1);
+    this._docOffset = new Vec2(0, 0);
+    this._docScale = 1;
+    this._docScaleTarget = 1;
+    this.zoomSmoothness = 0.1;
+  }
+  get docOffset() {
+    return this._docOffset;
+  }
+  set docOffset(value) {
+    this._docOffset = value;
+  }
+  get docScale() {
+    return this._docScale;
+  }
+  set docScale(value) {
+    this._docScale = value;
+  }
+  get docScaleTarget() {
+    return this._docScaleTarget;
+  }
+  set docScaleTarget(value) {
+    this._docScaleTarget = value;
   }
 };
 
@@ -13643,7 +13709,7 @@ var _GlobalValues = class {
     if (tool === null) {
       tool = new BasicPen();
     }
-    _GlobalValues.viewer = new DocViewer(canvas);
+    _GlobalValues.viewer = new DocCanvasViewer(canvas);
     _GlobalValues.currDoc = doc;
     if (this.currDoc.selectedLayer !== null) {
       this.currLayer = this.currDoc.selectedLayer;
@@ -13713,7 +13779,7 @@ var PaintTool = class {
   }
   commitChanges() {
     this.doc.render();
-    this.viewer.render();
+    this.viewer.update();
   }
 };
 
@@ -13787,7 +13853,7 @@ var PaintTool2D = class extends PaintTool {
       this.ctx.putImageData(this._imageData, 0, 0);
       this._imageData = null;
     }
-    this.viewer.render();
+    super.commitChanges();
   }
 };
 

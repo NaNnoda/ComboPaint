@@ -2,7 +2,7 @@ import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {PointerPoint} from "../Events/PointerEventHandler";
 import {CPLayer} from "../Layers/CPLayer";
 import ComboPaintDocument from "../Document/ComboPaintDocument";
-import {DocViewer} from "../DocViewer";
+import {DocCanvasViewer} from "../DocCanvasViewer";
 import {GlobalValues} from "../GlobalValues";
 
 export abstract class PaintTool {
@@ -74,6 +74,6 @@ export abstract class PaintTool {
 
     commitChanges() {
         this.doc.render();
-        this.viewer.render();
+        this.viewer.update();
     }
 }

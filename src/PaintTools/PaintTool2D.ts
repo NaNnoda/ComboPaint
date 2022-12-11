@@ -80,11 +80,12 @@ export abstract class PaintTool2D extends PaintTool {
 
 
     commitChanges() {
+
         this.doc.isDirty = true;
         if (this._imageData !== null) {
             this.ctx.putImageData(this._imageData, 0, 0);
             this._imageData = null;
         }
-        this.viewer.render();
+        super.commitChanges();
     }
 }

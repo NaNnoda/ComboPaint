@@ -7,13 +7,14 @@ import {GlobalValues} from "./GlobalValues";
 import {CPLayer} from "./Layers/CPLayer";
 import {nullLayer, NullLayer} from "./Layers/NullLayer";
 import {HTMLCanvasWrapper2D} from "./CanvasWrapper/HTMLCanvasWrapper2D";
+import {SmoothNumber} from "./SmoothNumber";
 
 /**
  * Class that renders a ComboPaintDocument to a canvas.
  * and also handles user input.
  */
-export class DocViewer extends HTMLCanvasWrapper2D {
-    _state: TranslateState;
+export class DocCanvasViewer extends HTMLCanvasWrapper2D {
+    _state: ViewerState;
 
     paintToolEventHandler: PaintToolEventHandler;
     events: ViewerEventsHandler;
@@ -28,7 +29,7 @@ export class DocViewer extends HTMLCanvasWrapper2D {
 
         this.setUpEventHandlers();
 
-        this._state = new TranslateState();
+        this._state = new ViewerState();
 
         if (this.doc) {
             console.log("Doc is not null");
@@ -38,20 +39,21 @@ export class DocViewer extends HTMLCanvasWrapper2D {
     }
 
     viewDoc(doc: ComboPaintDocument) {
-        this._state = new TranslateState();
+        this._state = new ViewerState();
         let offset = new Vec2(0, 0);
         let scale = 3;
         offset.x = (this.width) / 2 - doc.width / 2 * scale;
         offset.y = (this.height) / 2 - doc.height / 2 * scale;
-        this.state.offset = offset;
-        this.state.scale = new Vec2(scale);
+        this.state.docOffset = offset;
+        this.state.docScale = scale;
+        this.state._docScaleTarget = scale;
         console.log("setting background");
         this.background = new BackgroundLayer(doc.width, doc.height);
     }
 
     setUpEventHandlers() {
         this.events.registerEvent("midDrag", (e: PointerEvent) => {
-            let offset = this.state.offset;
+            let offset = this.state.docOffset;
             let lastE = this.events.lastMousePoint;
             if (lastE === null) {
                 return;
@@ -59,8 +61,8 @@ export class DocViewer extends HTMLCanvasWrapper2D {
             let dx = e.clientX - lastE.clientX;
             let dy = e.clientY - lastE.clientY;
             // console.log({dx, dy});/**/
-            this.state.offset = offset.addXY(dx, dy);
-            this.render();
+            this.state.docOffset = offset.addXY(dx, dy);
+            this.update();
         });
         this.events.registerEvent("wheel", (e: WheelEvent) => {
             let isTouchPad = e.deltaMode === 1;
@@ -73,18 +75,37 @@ export class DocViewer extends HTMLCanvasWrapper2D {
             // console.log("not touchpad");
             this.zoomRelativeToMouse(1 - e.deltaY / 1000);
             // console.log(this.state.scale);
-            this.render();
+            this.update();
         });
     }
 
     render() {
+        // console.log("rendering");
+
+        if (!this.isDirty) {
+            console.log("not dirty");
+            return;
+        }
+
         console.debug("Rendering");
         this.ctx.fillStyle = "#cfcfcf";
         this.ctx.fillRect(0, 0, this.width, this.height);
-        // this.renderBorder();
         this.renderBackground();
         this.renderDoc();
         this.renderForeground();
+
+        this.isDirty = false;
+
+        if (this.isDirty) {
+            // console.log("is dirty");
+            window.requestAnimationFrame(this.render.bind(this));
+        }
+    }
+
+    update() {
+        console.debug("updating");
+        this.isDirty = true;
+        this.render();
     }
 
     get state() {
@@ -97,8 +118,8 @@ export class DocViewer extends HTMLCanvasWrapper2D {
 
     viewToDocCoords(x: number, y: number) {
         return new Vec2(
-            (x - this.state.offset.x) / this.state.scale.x,
-            (y - this.state.offset.y) / this.state.scale.y
+            (x - this.state.docOffset.x) / this.state.docScale,
+            (y - this.state.docOffset.y) / this.state.docScale
         );
     }
 
@@ -112,24 +133,24 @@ export class DocViewer extends HTMLCanvasWrapper2D {
     }
 
     offsetCanvas(x: number, y: number) {
-        this.state.offset = this.state.offset.addXY(x, y);
+        this.state.docOffset = this.state.docOffset.addXY(x, y);
     }
 
     relativeZoom(x: number, y: number, zoom: number) {
-        if (this.state.scale.x > 100) {
+        if (this.state.docScale > 100) {
             if (zoom > 1) {
                 return;
             }
         }
-        let oldScale = this.state.scale;
-        let newScale = new Vec2(oldScale.x * zoom, oldScale.y * zoom);
-        let oldOffset = this.state.offset;
+        let oldScale = this.state.docScale;
+        let newScale = oldScale * zoom;
+        let oldOffset = this.state.docOffset;
         let newOffset = new Vec2(
             oldOffset.x + (x - oldOffset.x) * (1 - zoom),
             oldOffset.y + (y - oldOffset.y) * (1 - zoom)
         );
-        this.state.scale = newScale;
-        this.state.offset = newOffset;
+        this.state.docScale = newScale;
+        this.state.docOffset = newOffset;
     }
 
     get mousePos() {
@@ -138,27 +159,23 @@ export class DocViewer extends HTMLCanvasWrapper2D {
 
     docToViewCoords(x: number, y: number) {
         return new Vec2(
-            x * this.state.scale.x + this.state.offset.x,
-            y * this.state.scale.y + this.state.offset.y
+            x * this.state.docScale + this.state.docOffset.x,
+            y * this.state.docScale + this.state.docOffset.y
         );
     }
 
 
     renderDoc() {
         this.ctx.save();
-        this.ctx.translate(this.state.offset.x, this.state.offset.y);
-        this.ctx.scale(this.state.scale.x, this.state.scale.y);
+        this.ctx.translate(this.state.docOffset.x, this.state.docOffset.y);
+        this.ctx.scale(this.state.docScale, this.state.docScale);
         // if scale is bigger than 1, don't use image smoothing
-        this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1);
+        this.ctx.imageSmoothingEnabled = !(this.state.docScale > 1);
         if (this.doc.isDirty) {
             this.doc.render();
         }
         this.ctx.drawImage(this.doc.canvas, 0, 0);
         this.ctx.restore();
-    }
-
-    scaleBiggerThan(n: number) {
-        return this.state.scale.x > n || this.state.scale.y > n;
     }
 
     renderBackground() {
@@ -168,31 +185,30 @@ export class DocViewer extends HTMLCanvasWrapper2D {
         this.ctx.strokeStyle = "black";
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(
-            this.state.offset.x,
-            this.state.offset.y + 1,
-            this.doc.width * this.state.scale.x,
-            this.doc.height * this.state.scale.y + 1
+            this.state.docOffset.x,
+            this.state.docOffset.y + 1,
+            this.doc.width * this.state.docScale,
+            this.doc.height * this.state.docScale + 1
         );
         this.ctx.restore();
 
         // Draw background layer
         this.ctx.save();
-        this.ctx.translate(this.state.offset.x, this.state.offset.y);
-        this.ctx.scale(this.state.scale.x, this.state.scale.y);
+        this.ctx.translate(this.state.docOffset.x, this.state.docOffset.y);
+        this.ctx.scale(this.state.docScale, this.state.docScale);
         // if scale is bigger than 1, don't use image smoothing
-        this.ctx.imageSmoothingEnabled = !this.scaleBiggerThan(1)
+        this.ctx.imageSmoothingEnabled = !(this.state.docScale > 1)
         if (this.background == nullLayer) {
             console.log("Background is null");
 
         } else {
             this.ctx.drawImage(this.background.canvas, 0, 0);
         }
-
         this.ctx.restore();
     }
 
     drawScrollBars(barWidth: number, color1: string, color2: string) {
-        if (this.doc.width * this.state.scale.x > this.width) {
+        if (this.doc.width * this.state.docScale > this.width) {
             this.ctx.fillStyle = color1;
             this.ctx.fillRect(
                 0,
@@ -202,8 +218,8 @@ export class DocViewer extends HTMLCanvasWrapper2D {
             );
             this.ctx.fillStyle = color2;
 
-            let barXWidth = this.width * this.width / (this.doc.width * this.state.scale.x);
-            let barXPos = -this.state.offset.x * this.width / (this.doc.width * this.state.scale.x);
+            let barXWidth = this.width * this.width / (this.doc.width * this.state.docScale);
+            let barXPos = -this.state.docOffset.x * this.width / (this.doc.width * this.state.docScale);
             this.ctx.fillRect(
                 barXPos,
                 this.height - barWidth,
@@ -213,7 +229,7 @@ export class DocViewer extends HTMLCanvasWrapper2D {
 
         }
 
-        if (this.doc.height * this.state.scale.y > this.height) {
+        if (this.doc.height * this.state.docScale > this.height) {
             this.ctx.fillStyle = color1;
             this.ctx.fillRect(
                 this.width - barWidth,
@@ -223,8 +239,8 @@ export class DocViewer extends HTMLCanvasWrapper2D {
             );
             this.ctx.fillStyle = color2;
 
-            let barYHeight = this.height * this.height / (this.doc.height * this.state.scale.y);
-            let barYPos = -this.state.offset.y * this.height / (this.doc.height * this.state.scale.y);
+            let barYHeight = this.height * this.height / (this.doc.height * this.state.docScale);
+            let barYPos = -this.state.docOffset.y * this.height / (this.doc.height * this.state.docScale);
             this.ctx.fillRect(
                 this.width - barWidth,
                 barYPos,
@@ -235,37 +251,37 @@ export class DocViewer extends HTMLCanvasWrapper2D {
     }
 
     renderForeground() {
-        if (this.scaleBiggerThan(9)) {
+        if (this.state.docScale > 9) {
             this.ctx.save();
             // Draw a grid
             this.ctx.strokeStyle = "rgba(0,0,0,0.5)";
             this.ctx.lineWidth = 0.5;
             let startingX = Math.max(
-                this.state.offset.x % this.state.scale.x,
-                this.state.offset.x
+                this.state.docOffset.x % this.state.docScale,
+                this.state.docOffset.x
             );
             let startingY = Math.max(
-                this.state.offset.y % this.state.scale.y,
-                this.state.offset.y
+                this.state.docOffset.y % this.state.docScale,
+                this.state.docOffset.y
             );
 
-            let endX = (this.state.offset.x + this.doc.width * this.state.scale.x);
+            let endX = (this.state.docOffset.x + this.doc.width * this.state.docScale);
             if (endX > this.width) {
                 endX = this.width;
             }
-            let endY = (this.state.offset.y + this.doc.height * this.state.scale.y);
+            let endY = (this.state.docOffset.y + this.doc.height * this.state.docScale);
             if (endY > this.height) {
                 endY = this.height;
             }
 
-            for (let i = startingX; i < endX; i += this.state.scale.x) {
+            for (let i = startingX; i < endX; i += this.state.docScale) {
                 this.ctx.beginPath();
                 this.ctx.moveTo(i, startingY);
                 this.ctx.lineTo(i, endY);
                 this.ctx.stroke();
             }
 
-            for (let i = startingY; i < endY; i += this.state.scale.y) {
+            for (let i = startingY; i < endY; i += this.state.docScale) {
                 this.ctx.beginPath();
                 this.ctx.moveTo(startingX, i);
                 this.ctx.lineTo(endX, i);
@@ -282,5 +298,38 @@ export class DocViewer extends HTMLCanvasWrapper2D {
 
 class TranslateState {
     offset: Vec2 = new Vec2(0, 0);
-    scale: Vec2 = new Vec2(1, 1);
+    // scale: Vec2 = new Vec2(1, 1);
+}
+
+class ViewerState {
+    _animationSmooth = new SmoothNumber(1, 1, 0.1);
+    _docOffset: Vec2 = new Vec2(0, 0);
+    get docOffset() {
+        return this._docOffset;
+    }
+
+    set docOffset(value: Vec2) {
+        this._docOffset = value;
+    }
+
+    _docScale: number = 1;
+    _docScaleTarget: number = 1;
+
+    get docScale() {
+        return this._docScale;
+    }
+
+    set docScale(value: number) {
+        this._docScale = value;
+    }
+
+    get docScaleTarget() {
+        return this._docScaleTarget;
+    }
+
+    set docScaleTarget(value: number) {
+        this._docScaleTarget = value;
+    }
+
+    zoomSmoothness: number = 0.1;
 }

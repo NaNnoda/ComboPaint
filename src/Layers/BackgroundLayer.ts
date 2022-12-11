@@ -1,4 +1,3 @@
-import {CPLayer} from "./CPLayer";
 import {CPLayer2D} from "./CPLayer2D";
 
 type backgroundStyle = string | CanvasGradient | CanvasPattern | "checkerboard" | "solid" | "image";
@@ -11,6 +10,7 @@ export class BackgroundLayer extends CPLayer2D {
         this.fillStyle = fillStyle;
         this.render();
     }
+
     drawCheckerboard(color1: string, color2: string, size: number) {
         this.ctx.fillStyle = color1;
         this.ctx.fillRect(0, 0, this.width, this.height);
@@ -27,7 +27,7 @@ export class BackgroundLayer extends CPLayer2D {
     render() {
         if (this.fillStyle == "checkerboard") {
             // console.log("checkerboard");
-            this.drawCheckerboard("#ffffff", "#cbcbcb", 10);
+            this.drawCheckerboard("#ffffff", "#ddddde", 20);
         } else {
             this.ctx.fillStyle = this.fillStyle;
             this.ctx.fillRect(0, 0, this.width, this.height);

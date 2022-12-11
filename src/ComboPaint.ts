@@ -1,5 +1,5 @@
 import ComboPaintDocument from "./Document/ComboPaintDocument";
-import {DocViewer} from "./DocViewer";
+import {DocCanvasViewer} from "./DocCanvasViewer";
 
 export default class ComboPaint {
     canvas: HTMLCanvasElement;

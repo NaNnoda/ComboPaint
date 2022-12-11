@@ -1,6 +1,6 @@
 import EventHandler from "./EventHandler";
 import {PointerEventHandler} from "./PointerEventHandler";
-import {DocViewer} from "../DocViewer";
+import {DocCanvasViewer} from "../DocCanvasViewer";
 
 export type WheelEventKeys = "midDrag" | "wheel" | "rawPointer";
 
@@ -11,9 +11,9 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
 
     pointerEvent: PointerEventHandler;
 
-    viewer: DocViewer;
+    viewer: DocCanvasViewer;
 
-    constructor(viewer: DocViewer) {
+    constructor(viewer: DocCanvasViewer) {
         super();
         this.registerEvent("midDrag", this.onMidDrag.bind(this));
         this.registerEvent("wheel", this.onWheel.bind(this));

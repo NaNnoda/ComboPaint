@@ -13230,6 +13230,10 @@ var ViewerEventsHandler = class extends EventHandler {
       }
       this.lastMousePoint = e;
     });
+    canvas.addEventListener("mouseleave", (e) => {
+      this.isMidDragging = false;
+      this.lastMousePoint = null;
+    });
     this.pointerEvent = PointerEventHandler.createFromHTMLElement(canvas);
     this.pointerEvent.registerEvent("raw", this.onRawPointer.bind(this));
     this.viewer = viewer;
@@ -13901,18 +13905,21 @@ var BasicPen = class extends PaintTool2D {
     super();
     this._color = "#000000";
     this._maxWidth = 4;
-    this._minWidth = 1;
-    this._blur = 0.4;
+    this._minWidth = 0;
+    this._blur = 0.5;
   }
   onPressedMove(point) {
     super.onPressedMove(point);
     let lastPoint = this.eventHandler.lastPoint;
     if (lastPoint !== null) {
+      this.ctx.save();
+      this.ctx.imageSmoothingEnabled = false;
       this.ctx.strokeStyle = this._color;
       this.ctx.lineCap = "round";
       this.ctx.filter = `blur(${this._blur}px)`;
       this.ctx.lineWidth = this._maxWidth * point.pressure + this._minWidth;
       this.drawLine(lastPoint.x, lastPoint.y, point.x, point.y);
+      this.ctx.restore();
       this.commitChanges();
     }
   }
@@ -14087,8 +14094,8 @@ function main() {
   setUnscrollable(viewCanvas);
   viewCanvas.width = 800;
   viewCanvas.height = 600;
-  let width = 3200;
-  let height = 1800;
+  let width = 3840;
+  let height = 2160;
   let layer1 = new CPLayer2D(width, height, "Layer 1");
   let layer2 = new CPLayer2D(width, height, "red");
   layer2.ctx.fillStyle = "red";

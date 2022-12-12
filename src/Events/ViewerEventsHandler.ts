@@ -40,6 +40,10 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
             }
             this.lastMousePoint = e;
         });
+        canvas.addEventListener("mouseleave", (e) => {
+            this.isMidDragging = false;
+            this.lastMousePoint = null;
+        });
         this.pointerEvent = PointerEventHandler.createFromHTMLElement(canvas);
         this.pointerEvent.registerEvent("raw", this.onRawPointer.bind(this));
 

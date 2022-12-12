@@ -23,7 +23,7 @@ export class DocExporter {
     static exportPSD(doc: ComboPaintDocument): string {
         console.log("Exporting to PSD");
 
-        class PsdLayer{
+        class PsdLayer {
             top: number;
             left: number;
             bottom: number;
@@ -47,10 +47,12 @@ export class DocExporter {
                 this.hidden = false;
                 this.clipping = false;
                 this.name = cpLayer.name;
-                this.canvas = cpLayer.canvas;
+
+                this.canvas = this.canvasToOffScreenCanvas(cpLayer.canvas);
+                // this.canvas = cpLayer.canvas;
             }
 
-            canvasToOffScreenCanvas(canvas: HTMLCanvasElement): OffscreenCanvas {
+            canvasToOffScreenCanvas(canvas: HTMLCanvasElement | OffscreenCanvas): OffscreenCanvas {
                 let offscreenCanvas = new OffscreenCanvas(canvas.width, canvas.height);
                 let ctx = offscreenCanvas.getContext("2d") as OffscreenCanvasRenderingContext2D;
                 if (ctx === null) {

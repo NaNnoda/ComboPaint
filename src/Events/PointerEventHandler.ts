@@ -39,6 +39,7 @@ export class PointerEventHandler extends EventHandler<PointerEventKeys> {
     }
 
     static bindWithElement(handler: PointerEventHandler, element: HTMLElement) {
+
         element.addEventListener("pointerdown", handler.rawPointerEvent.bind(handler));
         element.addEventListener("pointerup", handler.rawPointerEvent.bind(handler));
         element.addEventListener("pointermove", handler.rawPointerEvent.bind(handler));
@@ -47,6 +48,12 @@ export class PointerEventHandler extends EventHandler<PointerEventKeys> {
         element.addEventListener("pointerover", handler.rawPointerEvent.bind(handler));
         element.addEventListener("pointerout", handler.rawPointerEvent.bind(handler));
         element.addEventListener("pointercancel", handler.rawPointerEvent.bind(handler));
+
+        element.addEventListener("touchmove", (e) => {
+            e.preventDefault();
+            // let touch = e.touches[0];
+            // handler.onRaw(e, new Vec2(touch.clientX, touch.clientY));
+        });
     }
 
     wasDown: boolean = false;
@@ -57,6 +64,8 @@ export class PointerEventHandler extends EventHandler<PointerEventKeys> {
     }
 
     onRaw(rawEvent: PointerEvent, customPos: Vec2|null = null) {
+        // rawEvent.preventDefault();
+        console.log("PointerEventHandler.onRaw");
         let point = PointerPoint.pointerEventToPointerPoint(rawEvent);
         if (customPos !== null) {
             point.pos = customPos;

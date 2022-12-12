@@ -13124,11 +13124,15 @@ var PointerEventHandler = class extends EventHandler {
     element.addEventListener("pointerover", handler.rawPointerEvent.bind(handler));
     element.addEventListener("pointerout", handler.rawPointerEvent.bind(handler));
     element.addEventListener("pointercancel", handler.rawPointerEvent.bind(handler));
+    element.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+    });
   }
   rawPointerEvent(rawEvent) {
     this.triggerEvent("raw", rawEvent);
   }
   onRaw(rawEvent, customPos = null) {
+    console.log("PointerEventHandler.onRaw");
     let point = PointerPoint.pointerEventToPointerPoint(rawEvent);
     if (customPos !== null) {
       point.pos = customPos;
@@ -13248,6 +13252,9 @@ var ViewerEventsHandler = class extends EventHandler {
 var BackgroundLayer = class extends CPLayer2D {
   constructor(width, height, fillStyle = "checkerboard") {
     super(width, height, "Background");
+    this._color1 = "#ffffff";
+    this._color2 = "#e7e7e7";
+    this._checkerboardSize = 20;
     this.fillStyle = fillStyle;
     this.render();
   }
@@ -13263,9 +13270,25 @@ var BackgroundLayer = class extends CPLayer2D {
       }
     }
   }
+  setColor1(color) {
+    this._color1 = color;
+    return this;
+  }
+  setColor2(color) {
+    this._color2 = color;
+    return this;
+  }
+  setCheckerboardSize(size) {
+    this._checkerboardSize = size;
+    return this;
+  }
+  setFillStyle(style) {
+    this.fillStyle = style;
+    return this;
+  }
   render() {
     if (this.fillStyle == "checkerboard") {
-      this.drawCheckerboard("#ffffff", "#ddddde", 20);
+      this.drawCheckerboard(this._color1, this._color2, this._checkerboardSize);
     } else {
       this.ctx.fillStyle = this.fillStyle;
       this.ctx.fillRect(0, 0, this.width, this.height);
@@ -13385,7 +13408,7 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
     this.state.docScale = scale;
     this.state._docScaleTarget = scale;
     console.log("setting background");
-    this.docBackground = new BackgroundLayer(doc.width, doc.height);
+    this.docBackground = new BackgroundLayer(doc.width, doc.height).setColor1("#ffffff").setColor2("#ffa166");
     this.docWrapper = new CPLayer2D(doc.width, doc.height, "DocWrapper");
   }
   setUpEventHandlers() {
@@ -13491,7 +13514,7 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
     this.docWrapper.clear();
     let blueStart = 1;
     if (this.state.docScale < blueStart) {
-      let blur = (1 / this.state.docScale - 1) / 2;
+      let blur = Math.max((1 / this.state.docScale - 1) / 2, 0);
       this.docWrapper.ctx.filter = "blur(" + blur + "px)";
     } else {
       this.docWrapper.ctx.filter = "none";
@@ -13598,9 +13621,9 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
       );
     }
     this.drawScrollBars(
-      10,
-      "#ffffff",
-      "#a9a9a9"
+      4,
+      "rgba(255,255,255,0.1)",
+      "rgba(0,0,0,0.4)"
     );
   }
 };
@@ -13878,14 +13901,18 @@ var BasicPen = class extends PaintTool2D {
   constructor() {
     super();
     this._fillStyle = "black";
-    this._width = 2;
+    this._maxWidth = 4;
+    this._minWidth = 1;
+    this._blur = 0.3;
   }
   onPressedMove(point) {
     super.onPressedMove(point);
     let lastPoint = this.eventHandler.lastPoint;
     if (lastPoint !== null) {
       this.setFillStyle(this._fillStyle);
-      this.ctx.lineWidth = this._width;
+      this.ctx.lineCap = "round";
+      this.ctx.filter = `blur(${this._blur}px)`;
+      this.ctx.lineWidth = this._maxWidth * point.pressure + this._minWidth;
       this.drawLine(lastPoint.x, lastPoint.y, point.x, point.y);
       this.commitChanges();
     }
@@ -13924,7 +13951,7 @@ var DocExporter = class {
         this.hidden = false;
         this.clipping = false;
         this.name = cpLayer.name;
-        this.canvas = cpLayer.canvas;
+        this.canvas = this.canvasToOffScreenCanvas(cpLayer.canvas);
       }
       canvasToOffScreenCanvas(canvas) {
         let offscreenCanvas = new OffscreenCanvas(canvas.width, canvas.height);
@@ -13971,6 +13998,9 @@ function addToConsole(path, value) {
     obj = obj[parts[i]];
   }
   obj[parts[parts.length - 1]] = value;
+}
+function setUnscrollable(element) {
+  element.style.overflow = "hidden";
 }
 
 // src/Preference.ts
@@ -14050,6 +14080,7 @@ function main() {
   if (viewCanvas === null) {
     throw new Error("viewCanvas is null");
   }
+  setUnscrollable(viewCanvas);
   viewCanvas.width = 800;
   viewCanvas.height = 600;
   let width = 3200;

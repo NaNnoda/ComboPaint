@@ -2,7 +2,7 @@ import ComboPaintDocument from "./Document/ComboPaintDocument";
 import {CPLayer} from "./Layers/CPLayer";
 import {BasicPen} from "./PaintTools/BasicPen";
 import {DocExporter} from "./Utils/DocExporter";
-import {addToConsole, downloadUrl} from "./Utils/Utils";
+import {addToConsole, downloadUrl, setUnscrollable} from "./Utils/Utils";
 import {Preference} from "./Preference";
 import {GlobalValues} from "./GlobalValues";
 import {CPLayer2D} from "./Layers/CPLayer2D";
@@ -46,6 +46,8 @@ function main() {
     if (viewCanvas === null) {
         throw new Error("viewCanvas is null");
     }
+    setUnscrollable(viewCanvas);
+
     viewCanvas.width = 800;
     viewCanvas.height = 600;
     let width = 3200;

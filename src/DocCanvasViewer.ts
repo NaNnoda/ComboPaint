@@ -50,7 +50,9 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
         this.state.docScale = scale;
         this.state._docScaleTarget = scale;
         console.log("setting background");
-        this.docBackground = new BackgroundLayer(doc.width, doc.height);
+        this.docBackground = new BackgroundLayer(doc.width, doc.height)
+            .setColor1("#ffffff")
+            .setColor2("#ffa166");
         this.docWrapper = new CPLayer2D(doc.width, doc.height, "DocWrapper");
     }
 
@@ -182,7 +184,7 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
         // If scale is smaller than 1, apply blur
         let blueStart = 1;
         if (this.state.docScale < blueStart) {
-            let blur = (1 / this.state.docScale - 1) / 2;
+            let blur = Math.max((1 / this.state.docScale - 1) / 2, 0);
             // this.docWrapper.ctx.filter = "blur(" + (1 / this.state.docScale - (1 / blueStart)) + "px)";
             this.docWrapper.ctx.filter = "blur(" + blur + "px)";
         } else {
@@ -305,9 +307,9 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
         }
 
         this.drawScrollBars(
-            10,
-            "#ffffff",
-            "#a9a9a9"
+            4,
+            "rgba(255,255,255,0.1)",
+            "rgba(0,0,0,0.4)"
         );
     }
 }

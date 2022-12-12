@@ -13132,7 +13132,6 @@ var PointerEventHandler = class extends EventHandler {
     this.triggerEvent("raw", rawEvent);
   }
   onRaw(rawEvent, customPos = null) {
-    console.log("PointerEventHandler.onRaw");
     let point = PointerPoint.pointerEventToPointerPoint(rawEvent);
     if (customPos !== null) {
       point.pos = customPos;
@@ -13900,16 +13899,16 @@ var PaintTool2D = class extends PaintTool {
 var BasicPen = class extends PaintTool2D {
   constructor() {
     super();
-    this._fillStyle = "black";
+    this._color = "#000000";
     this._maxWidth = 4;
     this._minWidth = 1;
-    this._blur = 0.3;
+    this._blur = 0.4;
   }
   onPressedMove(point) {
     super.onPressedMove(point);
     let lastPoint = this.eventHandler.lastPoint;
     if (lastPoint !== null) {
-      this.setFillStyle(this._fillStyle);
+      this.ctx.strokeStyle = this._color;
       this.ctx.lineCap = "round";
       this.ctx.filter = `blur(${this._blur}px)`;
       this.ctx.lineWidth = this._maxWidth * point.pressure + this._minWidth;
@@ -14050,13 +14049,18 @@ var PaintBucket = class extends PaintTool2D {
 function initConsole() {
   addToConsole("GlobalValues", GlobalValues);
   addToConsole("Preference", Preference);
-  addToConsole("save.png", (name = GlobalValues.currDoc.name) => {
-    let url = DocExporter.exportPNG(GlobalValues.currDoc);
-    downloadUrl(url, `${name}.png`);
-  });
-  addToConsole("save.psd", (name = GlobalValues.currDoc.name) => {
-    let url = DocExporter.exportPSD(GlobalValues.currDoc);
-    downloadUrl(url, `${name}.psd`);
+  addToConsole("save", {
+    get png() {
+      let url = DocExporter.exportPNG(GlobalValues.currDoc);
+      downloadUrl(url, `${GlobalValues.currDoc.name}.png`);
+      return `Saved ${GlobalValues.currDoc.name}.png`;
+    },
+    get psd() {
+      let url = DocExporter.exportPSD(GlobalValues.currDoc);
+      let name = GlobalValues.currDoc.name;
+      downloadUrl(url, `${GlobalValues.currDoc.name}.psd`);
+      return `Saved ${name}.psd`;
+    }
   });
   addToConsole("currDoc", GlobalValues.currDoc);
   addToConsole("currLayer", GlobalValues.currLayer);

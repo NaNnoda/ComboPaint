@@ -65,7 +65,7 @@ export class PointerEventHandler extends EventHandler<PointerEventKeys> {
 
     onRaw(rawEvent: PointerEvent, customPos: Vec2|null = null) {
         // rawEvent.preventDefault();
-        console.log("PointerEventHandler.onRaw");
+        // console.log("PointerEventHandler.onRaw");
         let point = PointerPoint.pointerEventToPointerPoint(rawEvent);
         if (customPos !== null) {
             point.pos = customPos;

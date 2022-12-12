@@ -12,14 +12,27 @@ function initConsole() {
     addToConsole("GlobalValues", GlobalValues);
     addToConsole("Preference", Preference);
     // addToConsole("localStorage",localStorage);
-    addToConsole("save.png", (name: string = GlobalValues.currDoc.name) => {
-        let url = DocExporter.exportPNG(GlobalValues.currDoc);
-        downloadUrl(url, `${name}.png`);
-    });
-    addToConsole("save.psd", (name: string = GlobalValues.currDoc.name) => {
-        let url = DocExporter.exportPSD(GlobalValues.currDoc);
-        downloadUrl(url, `${name}.psd`);
-    });
+    // addToConsole("save.png", (name: string = GlobalValues.currDoc.name) => {
+    //     let url = DocExporter.exportPNG(GlobalValues.currDoc);
+    //     downloadUrl(url, `${name}.png`);
+    // });
+    // addToConsole("save.psd", (name: string = GlobalValues.currDoc.name) => {
+    //     let url = DocExporter.exportPSD(GlobalValues.currDoc);
+    //     downloadUrl(url, `${name}.psd`);
+    // });
+    addToConsole("save", {
+        get png() {
+            let url = DocExporter.exportPNG(GlobalValues.currDoc);
+            downloadUrl(url, `${GlobalValues.currDoc.name}.png`);
+            return `Saved ${GlobalValues.currDoc.name}.png`;
+        },
+        get psd() {
+            let url = DocExporter.exportPSD(GlobalValues.currDoc);
+            let name = GlobalValues.currDoc.name;
+            downloadUrl(url, `${GlobalValues.currDoc.name}.psd`);
+            return `Saved ${name}.psd`;
+        }
+    })
     addToConsole("currDoc", GlobalValues.currDoc);
     addToConsole("currLayer", GlobalValues.currLayer);
     addToConsole("currTool", GlobalValues.currTool);

@@ -1,4 +1,4 @@
-import ComboPaintDocument from "./Document/ComboPaintDocument";
+import ComboPaintDocument from "./Documents/ComboPaintDocument";
 import {CPLayer} from "./Layers/CPLayer";
 import {BasicPen} from "./PaintTools/BasicPen";
 import {DocExporter} from "./Utils/DocExporter";
@@ -7,6 +7,7 @@ import {Preference} from "./Preference";
 import {GlobalValues} from "./GlobalValues";
 import {CPLayer2D} from "./Layers/CPLayer2D";
 import {PaintBucket} from "./PaintTools/PaintBucket";
+import {DropdownManager} from "./UserInterfaceManagers/DropdownManager";
 
 function initConsole() {
     addToConsole("GlobalValues", GlobalValues);
@@ -61,6 +62,7 @@ function main() {
     }
     setUnscrollable(viewCanvas);
 
+
     viewCanvas.width = 800;
     viewCanvas.height = 600;
     let width = 3840;
@@ -81,6 +83,13 @@ function main() {
         ),
         new BasicPen()
     );
+    let dropdownDiv = document.getElementById("dropdown") as HTMLDivElement;
+    let dropdownManager = new DropdownManager(dropdownDiv);
+    dropdownManager.addDropdown("debug", "log", () => {
+        console.log("layer dropdown");
+    });dropdownManager.addDropdown("debug", "sadsda", () => {
+        console.log("layer dropdown");
+    });
 
     initConsole();
 }

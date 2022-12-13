@@ -12801,7 +12801,7 @@ var require_dist = __commonJS({
   }
 });
 
-// src/CanvasWrapper/CanvasWrapper.ts
+// src/CanvasWrappers/CanvasWrapper.ts
 var CanvasWrapper = class {
   constructor(canvas, width, height, ctxId) {
     this._isDirty = true;
@@ -12845,7 +12845,7 @@ var CanvasWrapper = class {
   }
 };
 
-// src/CanvasWrapper/OffScreenCanvasWrapper.ts
+// src/CanvasWrappers/OffScreenCanvasWrapper.ts
 var OffScreenCanvasWrapper = class extends CanvasWrapper {
   constructor(width, height, ctxId) {
     super(new OffscreenCanvas(width, height), width, height, ctxId);
@@ -12854,7 +12854,7 @@ var OffScreenCanvasWrapper = class extends CanvasWrapper {
   }
 };
 
-// src/CanvasWrapper/OffScreenCanvasWrapper2D.ts
+// src/CanvasWrappers/OffScreenCanvasWrapper2D.ts
 var OffScreenCanvasWrapper2D = class extends OffScreenCanvasWrapper {
   constructor(width, height) {
     super(width, height, "2d");
@@ -12941,7 +12941,7 @@ var NullLayer = _NullLayer;
 NullLayer.instance = null;
 var nullLayer = NullLayer.getInstance();
 
-// src/Document/ComboPaintDocument.ts
+// src/Documents/ComboPaintDocument.ts
 var ComboPaintDocument = class extends OffScreenCanvasWrapper2D {
   constructor(size, layers = [], name) {
     super(size[0], size[1]);
@@ -13299,7 +13299,7 @@ var BackgroundLayer = class extends CPLayer2D {
   }
 };
 
-// src/CanvasWrapper/HTMLCanvasWrapper.ts
+// src/CanvasWrappers/HTMLCanvasWrapper.ts
 var HTMLCanvasWrapper = class extends CanvasWrapper {
   constructor(canvas = null, ctxId) {
     if (canvas === null) {
@@ -13318,7 +13318,7 @@ var HTMLCanvasWrapper = class extends CanvasWrapper {
   }
 };
 
-// src/CanvasWrapper/HTMLCanvasWrapper2D.ts
+// src/CanvasWrappers/HTMLCanvasWrapper2D.ts
 var HTMLCanvasWrapper2D = class extends HTMLCanvasWrapper {
   constructor(canvas = null) {
     super(canvas, "2d");
@@ -13385,7 +13385,7 @@ var SmoothNumber = class {
   }
 };
 
-// src/DocCanvasViewer.ts
+// src/UserInterfaceManagers/DocCanvasViewer.ts
 var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
   constructor(canvas) {
     super(canvas);
@@ -13658,7 +13658,7 @@ var ViewerState = class {
   }
 };
 
-// src/Document/NullCPDoc.ts
+// src/Documents/NullCPDoc.ts
 var NullCPDoc = class extends ComboPaintDocument {
   static get instance() {
     if (NullCPDoc._instance === null) {
@@ -13668,6 +13668,10 @@ var NullCPDoc = class extends ComboPaintDocument {
   }
 };
 var nullCPDoc = NullCPDoc.instance;
+
+// src/Events/GlobalEvent.ts
+var GlobalEvent = class extends EventHandler {
+};
 
 // src/GlobalValues.ts
 var _GlobalValues = class {
@@ -13679,6 +13683,9 @@ var _GlobalValues = class {
       console.log("Current document is nullCPDoc");
     }
     return _GlobalValues._currDoc;
+  }
+  static get events() {
+    return this._gEvent;
   }
   static set currDoc(doc) {
     _GlobalValues._currDoc = doc;
@@ -13765,6 +13772,7 @@ var GlobalValues = _GlobalValues;
 GlobalValues._currDoc = nullCPDoc;
 GlobalValues._allDocs = [];
 GlobalValues._allDocsSet = /* @__PURE__ */ new Set();
+GlobalValues._gEvent = new GlobalEvent();
 
 // src/PaintTools/PaintTool.ts
 var PaintTool = class {
@@ -14052,6 +14060,67 @@ var PaintBucket = class extends PaintTool2D {
   }
 };
 
+// src/UserInterfaceManagers/DropdownManager.ts
+var DropdownNode = class {
+  constructor(text, name, children = []) {
+    this.text = text;
+    this.name = name;
+    this.children = children;
+  }
+};
+var DropdownManager = class {
+  constructor(div) {
+    this.dropdownNodes = [];
+    this._div = div;
+  }
+  get div() {
+    return this._div;
+  }
+  addDropdown(tagName, optionName, onClick) {
+    console.log("Adding dropdown");
+    let parts = tagName.split(".");
+    let currentDict = this.dropdownNodes;
+    for (let part of parts) {
+      let found = false;
+      for (let node of currentDict) {
+        if (node.name == part) {
+          currentDict = node.children;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        let newNode = new DropdownNode(part, part);
+        currentDict.push(newNode);
+        currentDict = newNode.children;
+      }
+    }
+    this.update();
+  }
+  update() {
+    this.div.innerHTML = "";
+    let root = this.div;
+    for (let node of this.dropdownNodes) {
+      let dropdown = document.createElement("div");
+      dropdown.classList.add("dropdown");
+      dropdown.innerHTML = node.text;
+      dropdown.addEventListener("click", () => {
+        console.log("Clicked dropdown");
+        dropdown.classList.toggle("active");
+      });
+      let dropdownContent = document.createElement("div");
+      dropdownContent.classList.add("dropdown-content");
+      for (let child of node.children) {
+        let childDiv = document.createElement("div");
+        childDiv.innerHTML = child.text;
+        dropdownContent.appendChild(childDiv);
+      }
+      dropdown.appendChild(dropdownContent);
+      root.appendChild(dropdown);
+    }
+  }
+};
+
 // src/Main.ts
 function initConsole() {
   addToConsole("GlobalValues", GlobalValues);
@@ -14110,6 +14179,14 @@ function main() {
     ),
     new BasicPen()
   );
+  let dropdownDiv = document.getElementById("dropdown");
+  let dropdownManager = new DropdownManager(dropdownDiv);
+  dropdownManager.addDropdown("debug", "log", () => {
+    console.log("layer dropdown");
+  });
+  dropdownManager.addDropdown("debug", "sadsda", () => {
+    console.log("layer dropdown");
+  });
   initConsole();
 }
 main();

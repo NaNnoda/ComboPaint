@@ -1,11 +1,12 @@
-import ComboPaintDocument from "./Document/ComboPaintDocument";
-import {DocCanvasViewer} from "./DocCanvasViewer";
+import ComboPaintDocument from "./Documents/ComboPaintDocument";
+import {DocCanvasViewer} from "./UserInterfaceManagers/DocCanvasViewer";
 import {PaintTool} from "./PaintTools/PaintTool";
 import {CPLayer} from "./Layers/CPLayer";
 import {nullLayer, NullLayer} from "./Layers/NullLayer";
 import {BasicPen} from "./PaintTools/BasicPen";
-import {nullCPDoc} from "./Document/NullCPDoc";
+import {nullCPDoc} from "./Documents/NullCPDoc";
 import {CPLayer2D} from "./Layers/CPLayer2D";
+import {GlobalEvent} from "./Events/GlobalEvent";
 
 export class GlobalValues {
     static _currDoc: ComboPaintDocument = nullCPDoc;
@@ -13,6 +14,8 @@ export class GlobalValues {
     static _allDocsSet: Set<ComboPaintDocument> = new Set<ComboPaintDocument>();
     static _currTool: PaintTool;
     static _viewer: DocCanvasViewer;
+
+    static _gEvent: GlobalEvent = new GlobalEvent();
 
     static get currDoc(): ComboPaintDocument {
         if (this._currDoc === null) {
@@ -22,6 +25,10 @@ export class GlobalValues {
             console.log("Current document is nullCPDoc");
         }
         return GlobalValues._currDoc;
+    }
+
+    static get events(): GlobalEvent {
+        return this._gEvent;
     }
 
     static set currDoc(doc: ComboPaintDocument) {

@@ -1,5 +1,5 @@
 import {CPLayer} from "../Layers/CPLayer";
-import {OffScreenCanvasWrapper2D} from "../CanvasWrapper/OffScreenCanvasWrapper2D";
+import {OffScreenCanvasWrapper2D} from "../CanvasWrappers/OffScreenCanvasWrapper2D";
 import {nullLayer} from "../Layers/NullLayer";
 
 export default class ComboPaintDocument extends OffScreenCanvasWrapper2D {

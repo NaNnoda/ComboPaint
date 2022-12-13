@@ -1,8 +1,8 @@
 import EventHandler from "./EventHandler";
 import {PointerEventHandler} from "./PointerEventHandler";
-import {DocCanvasViewer} from "../DocCanvasViewer";
+import {DocCanvasViewer} from "../UserInterfaceManagers/DocCanvasViewer";
 
-export type WheelEventKeys = "midDrag" | "wheel" | "rawPointer";
+export type WheelEventKeys = "midDrag" | "wheel" | "rawPointer" | "docOffset" | "docScale";
 
 export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
     lastMousePoint: MouseEvent | null = null;
@@ -56,7 +56,7 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
 
         let pos = this.viewer.viewToDocCoords(e.offsetX, e.offsetY);
 
-        if (e.button  !== 1) {
+        if (e.button !== 1) {
             this.viewer.paintToolEventHandler.triggerEvent("raw", e, pos);
         }
     }

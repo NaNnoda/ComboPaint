@@ -1,4 +1,4 @@
-import {OffScreenCanvasWrapper} from "../CanvasWrapper/OffScreenCanvasWrapper";
+import {OffScreenCanvasWrapper} from "../CanvasWrappers/OffScreenCanvasWrapper";
 
 export abstract class CPLayer extends OffScreenCanvasWrapper {
     name: string;

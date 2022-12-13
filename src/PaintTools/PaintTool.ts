@@ -1,8 +1,8 @@
 import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {PointerPoint} from "../Events/PointerEventHandler";
 import {CPLayer} from "../Layers/CPLayer";
-import ComboPaintDocument from "../Document/ComboPaintDocument";
-import {DocCanvasViewer} from "../DocCanvasViewer";
+import ComboPaintDocument from "../Documents/ComboPaintDocument";
+import {DocCanvasViewer} from "../UserInterfaceManagers/DocCanvasViewer";
 import {GlobalValues} from "../GlobalValues";
 
 export abstract class PaintTool {

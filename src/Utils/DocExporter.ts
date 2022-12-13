@@ -1,4 +1,4 @@
-import ComboPaintDocument from "../Document/ComboPaintDocument";
+import ComboPaintDocument from "../Documents/ComboPaintDocument";
 import * as psd from "ag-psd"
 import {CPLayer} from "../Layers/CPLayer";
 

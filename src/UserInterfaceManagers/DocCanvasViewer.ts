@@ -1,14 +1,14 @@
-import ComboPaintDocument from "./Document/ComboPaintDocument";
-import {Vec2} from "./MathUtils/Vec2";
-import {PaintToolEventHandler} from "./Events/PaintToolEventHandler";
-import {ViewerEventsHandler} from "./Events/ViewerEventsHandler";
-import {BackgroundLayer} from "./Layers/BackgroundLayer";
-import {GlobalValues} from "./GlobalValues";
-import {CPLayer} from "./Layers/CPLayer";
-import {nullLayer, NullLayer} from "./Layers/NullLayer";
-import {HTMLCanvasWrapper2D} from "./CanvasWrapper/HTMLCanvasWrapper2D";
-import {SmoothNumber} from "./SmoothNumber";
-import {CPLayer2D} from "./Layers/CPLayer2D";
+import ComboPaintDocument from "../Documents/ComboPaintDocument";
+import {Vec2} from "../MathUtils/Vec2";
+import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
+import {ViewerEventsHandler} from "../Events/ViewerEventsHandler";
+import {BackgroundLayer} from "../Layers/BackgroundLayer";
+import {GlobalValues} from "../GlobalValues";
+import {CPLayer} from "../Layers/CPLayer";
+import {nullLayer, NullLayer} from "../Layers/NullLayer";
+import {HTMLCanvasWrapper2D} from "../CanvasWrappers/HTMLCanvasWrapper2D";
+import {SmoothNumber} from "../SmoothNumber";
+import {CPLayer2D} from "../Layers/CPLayer2D";
 
 /**
  * Class that renders a ComboPaintDocument to a canvas.

@@ -1,6 +1,6 @@
 import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {PointerPoint} from "../Events/PointerEventHandler";
-import {justPaint} from "../JustPaint";
+import {justPaint} from "../Global/JustPaint";
 // import {justPaint} from "../JustPaint";
 
 export abstract class PaintTool {

@@ -3,9 +3,9 @@ import {Vec2} from "../MathUtils/Vec2";
 import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {ViewerEventsHandler} from "../Events/ViewerEventsHandler";
 import {BackgroundLayer} from "../Layers/BackgroundLayer";
-import {justPaint} from "../JustPaint";
+import {justPaint} from "../Global/JustPaint";
 
-import {nullLayer, NullLayer} from "../Layers/NullLayer";
+import {nullLayer, NullLayer} from "../Global/NullLayer";
 import {HTMLCanvasWrapper2D} from "../CanvasWrappers/HTMLCanvasWrapper2D";
 import {SmoothNumber} from "../SmoothNumber";
 import {JPLayer2D} from "../Layers/JPLayer2D";

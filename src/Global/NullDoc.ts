@@ -1,5 +1,5 @@
-import JustPaintDocument from "./JustPaintDocument";
-import {nullLayer} from "../Layers/NullLayer";
+import JustPaintDocument from "../Documents/JustPaintDocument";
+import {nullLayer} from "./NullLayer";
 
 
 export class NullDoc extends JustPaintDocument {

@@ -1,5 +1,5 @@
 
-import {JPLayer2D} from "./JPLayer2D";
+import {JPLayer2D} from "../Layers/JPLayer2D";
 
 export class NullLayer extends JPLayer2D {
     private static instance: NullLayer | null = null;

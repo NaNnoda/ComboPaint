@@ -12940,7 +12940,7 @@ var JPLayer2D = class extends JPLayer {
   }
 };
 
-// src/Layers/NullLayer.ts
+// src/Global/NullLayer.ts
 var _NullLayer = class extends JPLayer2D {
   static getInstance() {
     if (!_NullLayer.instance) {
@@ -12956,6 +12956,127 @@ var _NullLayer = class extends JPLayer2D {
 var NullLayer = _NullLayer;
 NullLayer.instance = null;
 var nullLayer = NullLayer.getInstance();
+
+// src/Events/EventHandler.ts
+var EventHandler = class {
+  constructor() {
+    this.events = {};
+  }
+  registerEvent(event, callback) {
+    if (this.events[event] === void 0) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  }
+  triggerEvent(event, ...args) {
+    if (this.events[event] !== void 0) {
+      for (let callback of this.events[event]) {
+        callback(...args);
+      }
+    }
+  }
+  removeEvent(event) {
+    delete this.events[event];
+  }
+  removeCallback(event, callback) {
+    if (this.events[event] !== void 0) {
+      this.events[event] = this.events[event].filter((value) => {
+        return value !== callback;
+      });
+    }
+  }
+  removeAllEvents() {
+    this.events = {};
+  }
+};
+
+// src/Global/GlobalEvent.ts
+var GlobalEvent = class extends EventHandler {
+};
+var globalEvent = new GlobalEvent();
+
+// src/Documents/JustPaintDocument.ts
+var JustPaintDocument = class extends OffScreenCanvasWrapper2D {
+  constructor(size, layers = [], name) {
+    super(size[0], size[1]);
+    this.layers = [];
+    this.selectedLayer = nullLayer;
+    this.name = name;
+    this.addLayers(...layers);
+    this.initGlobalEvent();
+  }
+  get height() {
+    return this.canvas.height;
+  }
+  set height(height) {
+    this.canvas.height = height;
+  }
+  get width() {
+    return this.canvas.width;
+  }
+  set width(width) {
+    this.canvas.width = width;
+  }
+  initGlobalEvent() {
+    globalEvent.registerEvent("docCanvasUpdate", () => {
+      this.isDirty = true;
+      this.render();
+    });
+  }
+  addLayer(layer, index = this.layers.length) {
+    this.layers.splice(index, 0, layer);
+    if (this.selectedLayer == nullLayer) {
+      this.selectedLayer = layer;
+    }
+  }
+  addLayers(...layers) {
+    for (let layer of layers) {
+      this.addLayer(layer);
+    }
+    if (this.selectedLayer == null && layers.length > 0) {
+      this.selectedLayer = layers[0];
+    }
+  }
+  createUndoCheckPoint() {
+    console.log("Creating undo checkpoint");
+    for (let layer of this.layers) {
+      layer.createUndoCheckPoint();
+    }
+  }
+  undo() {
+    for (let layer of this.layers) {
+      layer.undo();
+    }
+    this.isDirty = true;
+    this.render();
+    globalEvent.triggerEvent("docCanvasUpdate");
+  }
+  selectLayerByIndex(index) {
+    if (index < 0 || index >= this.layers.length) {
+      console.log("Index out of bounds");
+      return;
+    }
+    this.selectedLayer = this.layers[index];
+  }
+  render() {
+    if (!this.isDirty) {
+      return;
+    }
+    this.clear();
+    for (let layer of this.layers) {
+      if (layer.visible) {
+        this.drawLayer(layer);
+      }
+    }
+    this.isDirty = false;
+  }
+  drawLayer(layer) {
+    this.ctx.globalAlpha = layer.opacity;
+    this.ctx.globalCompositeOperation = layer.blendMode;
+    layer.render();
+    this.ctx.drawImage(layer.canvas, 0, 0);
+  }
+};
 
 // src/MathUtils/Vec2.ts
 var Vec2 = class {
@@ -13004,39 +13125,6 @@ var Vec2 = class {
   }
   angleTo(other) {
     return other.angle() - this.angle();
-  }
-};
-
-// src/Events/EventHandler.ts
-var EventHandler = class {
-  constructor() {
-    this.events = {};
-  }
-  registerEvent(event, callback) {
-    if (this.events[event] === void 0) {
-      this.events[event] = [];
-    }
-    this.events[event].push(callback);
-  }
-  triggerEvent(event, ...args) {
-    if (this.events[event] !== void 0) {
-      for (let callback of this.events[event]) {
-        callback(...args);
-      }
-    }
-  }
-  removeEvent(event) {
-    delete this.events[event];
-  }
-  removeCallback(event, callback) {
-    if (this.events[event] !== void 0) {
-      this.events[event] = this.events[event].filter((value) => {
-        return value !== callback;
-      });
-    }
-  }
-  removeAllEvents() {
-    this.events = {};
   }
 };
 
@@ -13618,6 +13706,150 @@ var ViewerState = class {
   }
 };
 
+// src/UserInterfaceManagers/NullCanvasViewer.ts
+var _NullCanvasViewer = class extends DocCanvasViewer {
+  constructor() {
+    let canvas = document.createElement("canvas");
+    super(canvas);
+  }
+  static get instance() {
+    if (_NullCanvasViewer._instance === null) {
+      _NullCanvasViewer._instance = new _NullCanvasViewer();
+    }
+    return _NullCanvasViewer._instance;
+  }
+};
+var NullCanvasViewer = _NullCanvasViewer;
+NullCanvasViewer._instance = null;
+
+// src/Global/NullDoc.ts
+var NullDoc = class extends JustPaintDocument {
+  static get instance() {
+    if (NullDoc._instance === null) {
+      NullDoc._instance = new NullDoc([1, 1], [nullLayer], "nullCPDoc");
+    }
+    return NullDoc._instance;
+  }
+};
+
+// src/Global/JustPaint.ts
+var _JustPaint = class {
+  constructor() {
+    this._currDoc = null;
+    this._currTool = null;
+    this._viewer = null;
+    this._allDocs = [];
+    this._allDocsSet = /* @__PURE__ */ new Set();
+  }
+  static get instance() {
+    if (_JustPaint._instance === null) {
+      console.log("Creating new instance of JustPaint");
+      _JustPaint._instance = new _JustPaint();
+    }
+    return _JustPaint._instance;
+  }
+  get currDoc() {
+    if (this._currDoc === null) {
+      console.log("Current document is null");
+      return NullDoc.instance;
+    }
+    return this._currDoc;
+  }
+  get events() {
+    return globalEvent;
+  }
+  set currDoc(doc) {
+    this._currDoc = doc;
+    this.viewer.viewDoc(doc);
+    if (!this.allDocsSet.has(doc)) {
+      this.addDoc(doc);
+    }
+  }
+  addDoc(doc) {
+    this.allDocs.push(doc);
+    this.allDocsSet.add(doc);
+  }
+  removeDoc(doc) {
+    if (!this.allDocsSet.has(doc)) {
+      console.log("Doc not found");
+      return;
+    }
+    let index = this.allDocs.indexOf(doc);
+    if (index !== -1) {
+      this.allDocs.splice(index, 1);
+    }
+    this.allDocsSet.delete(doc);
+    if (this.currDoc === doc) {
+      if (this.allDocs.length > 0) {
+        this.currDoc = this.allDocs[0];
+      }
+    }
+  }
+  get allDocsSet() {
+    return this._allDocsSet;
+  }
+  get allDocs() {
+    return this._allDocs;
+  }
+  get currTool() {
+    if (this._currTool === null) {
+      console.log("Current tool is null");
+      return new BasicPen();
+    }
+    return this._currTool;
+  }
+  set currTool(tool) {
+    this._currTool = tool;
+    tool.eventHandler = this.viewer.paintToolEventHandler;
+  }
+  get viewer() {
+    if (this._viewer === null) {
+      console.log("Viewer is null");
+      return NullCanvasViewer.instance;
+    }
+    return this._viewer;
+  }
+  set viewer(viewer) {
+    this._viewer = viewer;
+  }
+  get currLayer() {
+    if (!this.currDoc) {
+      console.log("No current document");
+    }
+    if (this.currDoc.selectedLayer === null || this.currDoc.selectedLayer === nullLayer) {
+      console.log("No layer selected");
+      return nullLayer;
+    }
+    return this.currDoc.selectedLayer;
+  }
+  set currLayer(layer) {
+    this.currDoc.selectedLayer = layer;
+  }
+  init(canvas, doc = null, tool = null) {
+    if (doc === null) {
+      doc = new JustPaintDocument(
+        [3200, 1800],
+        [new JPLayer2D(3200, 1800, "Layer 1").fill("#ffffff")],
+        "Untitled"
+      );
+    }
+    if (tool === null) {
+      tool = new BasicPen();
+    }
+    this.viewer = new DocCanvasViewer(canvas);
+    this.currDoc = doc;
+    if (this.currDoc.selectedLayer !== null) {
+      this.currLayer = this.currDoc.selectedLayer;
+    }
+    this.currTool = tool;
+    this.currDoc.render();
+    this.viewer.render();
+  }
+};
+var JustPaint = _JustPaint;
+JustPaint._instance = null;
+var justPaint = JustPaint.instance;
+
 // src/PaintTools/PaintTool.ts
 var PaintTool = class {
   constructor(eventHandler = null, name = null) {
@@ -13772,242 +14004,10 @@ var BasicPen = class extends PaintTool2D {
       this.commitChanges();
     }
   }
-  onUp(point) {
+  onDown(point) {
     super.onUp(point);
     this.doc.createUndoCheckPoint();
     this.commitChanges();
-  }
-};
-
-// src/Events/GlobalEvent.ts
-var GlobalEvent = class extends EventHandler {
-};
-
-// src/UserInterfaceManagers/NullCanvasViewer.ts
-var _NullCanvasViewer = class extends DocCanvasViewer {
-  constructor() {
-    let canvas = document.createElement("canvas");
-    super(canvas);
-  }
-  static get instance() {
-    if (_NullCanvasViewer._instance === null) {
-      _NullCanvasViewer._instance = new _NullCanvasViewer();
-    }
-    return _NullCanvasViewer._instance;
-  }
-};
-var NullCanvasViewer = _NullCanvasViewer;
-NullCanvasViewer._instance = null;
-
-// src/Documents/NullDoc.ts
-var NullDoc = class extends JustPaintDocument {
-  static get instance() {
-    if (NullDoc._instance === null) {
-      NullDoc._instance = new NullDoc([1, 1], [nullLayer], "nullCPDoc");
-    }
-    return NullDoc._instance;
-  }
-};
-
-// src/JustPaint.ts
-var _JustPaint = class {
-  constructor() {
-    this._currDoc = null;
-    this._gEvent = new GlobalEvent();
-    this._currTool = null;
-    this._viewer = null;
-    this._allDocs = [];
-    this._allDocsSet = /* @__PURE__ */ new Set();
-  }
-  static get instance() {
-    if (_JustPaint._instance === null) {
-      console.log("Creating new instance of JustPaint");
-      _JustPaint._instance = new _JustPaint();
-    }
-    return _JustPaint._instance;
-  }
-  get currDoc() {
-    if (this._currDoc === null) {
-      console.log("Current document is null");
-      return NullDoc.instance;
-    }
-    return this._currDoc;
-  }
-  get events() {
-    return this._gEvent;
-  }
-  set currDoc(doc) {
-    this._currDoc = doc;
-    this.viewer.viewDoc(doc);
-    if (!this.allDocsSet.has(doc)) {
-      this.addDoc(doc);
-    }
-  }
-  addDoc(doc) {
-    this.allDocs.push(doc);
-    this.allDocsSet.add(doc);
-  }
-  removeDoc(doc) {
-    if (!this.allDocsSet.has(doc)) {
-      console.log("Doc not found");
-      return;
-    }
-    let index = this.allDocs.indexOf(doc);
-    if (index !== -1) {
-      this.allDocs.splice(index, 1);
-    }
-    this.allDocsSet.delete(doc);
-    if (this.currDoc === doc) {
-      if (this.allDocs.length > 0) {
-        this.currDoc = this.allDocs[0];
-      }
-    }
-  }
-  get allDocsSet() {
-    return this._allDocsSet;
-  }
-  get allDocs() {
-    return this._allDocs;
-  }
-  get currTool() {
-    if (this._currTool === null) {
-      console.log("Current tool is null");
-      return new BasicPen();
-    }
-    return this._currTool;
-  }
-  set currTool(tool) {
-    this._currTool = tool;
-    tool.eventHandler = this.viewer.paintToolEventHandler;
-  }
-  get viewer() {
-    if (this._viewer === null) {
-      console.log("Viewer is null");
-      return NullCanvasViewer.instance;
-    }
-    return this._viewer;
-  }
-  set viewer(viewer) {
-    this._viewer = viewer;
-  }
-  get currLayer() {
-    if (!this.currDoc) {
-      console.log("No current document");
-    }
-    if (this.currDoc.selectedLayer === null || this.currDoc.selectedLayer === nullLayer) {
-      console.log("No layer selected");
-      return nullLayer;
-    }
-    return this.currDoc.selectedLayer;
-  }
-  set currLayer(layer) {
-    this.currDoc.selectedLayer = layer;
-  }
-  init(canvas, doc = null, tool = null) {
-    if (doc === null) {
-      doc = new JustPaintDocument(
-        [3200, 1800],
-        [new JPLayer2D(3200, 1800, "Layer 1").fill("#ffffff")],
-        "Untitled"
-      );
-    }
-    if (tool === null) {
-      tool = new BasicPen();
-    }
-    this.viewer = new DocCanvasViewer(canvas);
-    this.currDoc = doc;
-    if (this.currDoc.selectedLayer !== null) {
-      this.currLayer = this.currDoc.selectedLayer;
-    }
-    this.currTool = tool;
-    this.currDoc.render();
-    this.viewer.render();
-  }
-};
-var JustPaint = _JustPaint;
-JustPaint._instance = null;
-var justPaint = JustPaint.instance;
-
-// src/Documents/JustPaintDocument.ts
-var JustPaintDocument = class extends OffScreenCanvasWrapper2D {
-  constructor(size, layers = [], name) {
-    super(size[0], size[1]);
-    this.layers = [];
-    this.selectedLayer = nullLayer;
-    this.name = name;
-    this.addLayers(...layers);
-    this.initGlobalEvent();
-  }
-  get height() {
-    return this.canvas.height;
-  }
-  set height(height) {
-    this.canvas.height = height;
-  }
-  get width() {
-    return this.canvas.width;
-  }
-  set width(width) {
-    this.canvas.width = width;
-  }
-  initGlobalEvent() {
-    justPaint.events.registerEvent("docCanvasUpdate", () => {
-      this.isDirty = true;
-      this.render();
-    });
-  }
-  addLayer(layer, index = this.layers.length) {
-    this.layers.splice(index, 0, layer);
-    if (this.selectedLayer == nullLayer) {
-      this.selectedLayer = layer;
-    }
-  }
-  addLayers(...layers) {
-    for (let layer of layers) {
-      this.addLayer(layer);
-    }
-    if (this.selectedLayer == null && layers.length > 0) {
-      this.selectedLayer = layers[0];
-    }
-  }
-  createUndoCheckPoint() {
-    console.log("Creating undo checkpoint");
-    for (let layer of this.layers) {
-      layer.createUndoCheckPoint();
-    }
-  }
-  undo() {
-    for (let layer of this.layers) {
-      layer.undo();
-    }
-    this.isDirty = true;
-    this.render();
-    justPaint.events.triggerEvent("docCanvasUpdate");
-  }
-  selectLayerByIndex(index) {
-    if (index < 0 || index >= this.layers.length) {
-      console.log("Index out of bounds");
-      return;
-    }
-    this.selectedLayer = this.layers[index];
-  }
-  render() {
-    if (!this.isDirty) {
-      return;
-    }
-    this.clear();
-    for (let layer of this.layers) {
-      if (layer.visible) {
-        this.drawLayer(layer);
-      }
-    }
-    this.isDirty = false;
-  }
-  drawLayer(layer) {
-    this.ctx.globalAlpha = layer.opacity;
-    this.ctx.globalCompositeOperation = layer.blendMode;
-    layer.render();
-    this.ctx.drawImage(layer.canvas, 0, 0);
   }
 };
 

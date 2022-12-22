@@ -1,8 +1,7 @@
 import {JPLayer2D} from "../Layers/JPLayer2D";
 import {OffScreenCanvasWrapper2D} from "../CanvasWrappers/OffScreenCanvasWrapper2D";
-import {nullLayer} from "../Layers/NullLayer";
-import {JPLayer} from "../Layers/JPLayer";
-import {justPaint} from "../JustPaint";
+import {nullLayer} from "../Global/NullLayer";
+import {globalEvent} from "../Global/GlobalEvent";
 
 export default class JustPaintDocument extends OffScreenCanvasWrapper2D {
     layers: JPLayer2D[] = [];
@@ -35,7 +34,7 @@ export default class JustPaintDocument extends OffScreenCanvasWrapper2D {
     }
 
     initGlobalEvent() {
-        justPaint.events.registerEvent("docCanvasUpdate", () => {
+        globalEvent.registerEvent("docCanvasUpdate", () => {
             this.isDirty = true;
             this.render();
         });
@@ -74,13 +73,7 @@ export default class JustPaintDocument extends OffScreenCanvasWrapper2D {
 
         this.render();
 
-        justPaint.events.triggerEvent("docCanvasUpdate");
-
-        // try {
-        //     justPaint.viewer.update();
-        // } catch (e) {
-        //     console.error(e);
-        // }
+        globalEvent.triggerEvent("docCanvasUpdate");
     }
 
     selectLayerByIndex(index: number) {

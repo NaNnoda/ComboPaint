@@ -1,12 +1,12 @@
-import JustPaintDocument from "./Documents/JustPaintDocument";
-import {DocCanvasViewer} from "./UserInterfaceManagers/DocCanvasViewer";
-import {PaintTool} from "./PaintTools/PaintTool";
-import {nullLayer} from "./Layers/NullLayer";
-import {BasicPen} from "./PaintTools/BasicPen";
-import {JPLayer2D} from "./Layers/JPLayer2D";
-import {GlobalEvent} from "./Events/GlobalEvent";
-import {NullCanvasViewer} from "./UserInterfaceManagers/NullCanvasViewer";
-import {NullDoc} from "./Documents/NullDoc";
+import JustPaintDocument from "../Documents/JustPaintDocument";
+import {DocCanvasViewer} from "../UserInterfaceManagers/DocCanvasViewer";
+import {PaintTool} from "../PaintTools/PaintTool";
+import {nullLayer} from "./NullLayer";
+import {BasicPen} from "../PaintTools/BasicPen";
+import {JPLayer2D} from "../Layers/JPLayer2D";
+import {globalEvent, GlobalEvent} from "./GlobalEvent";
+import {NullCanvasViewer} from "../UserInterfaceManagers/NullCanvasViewer";
+import {NullDoc} from "./NullDoc";
 
 
 /**
@@ -15,7 +15,6 @@ import {NullDoc} from "./Documents/NullDoc";
  */
 export class JustPaint {
     _currDoc: JustPaintDocument | null = null;
-    _gEvent: GlobalEvent = new GlobalEvent();
     _currTool: PaintTool | null = null;
     _viewer: DocCanvasViewer | null = null;
 
@@ -42,7 +41,7 @@ export class JustPaint {
     }
 
     get events(): GlobalEvent {
-        return this._gEvent;
+        return globalEvent;
     }
 
     set currDoc(doc: JustPaintDocument) {

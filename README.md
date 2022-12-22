@@ -5,4 +5,9 @@ JustPaint is a simple paint program written in JavaScript.
 
 * Drawing
 * Erasing
-* Saving
+* Saving to PNG / PSD(Basic)
+* Undo
+
+## TODO
+* Custom file
+* More paint tools (e.g. fill tool, text tool)

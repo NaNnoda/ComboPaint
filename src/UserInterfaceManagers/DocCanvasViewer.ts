@@ -37,6 +37,14 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
             console.log(this.doc);
             this.viewDoc(this.doc);
         }
+
+        this.initGlobalEvents();
+    }
+
+    initGlobalEvents() {
+        justPaint.events.registerEvent("docCanvasUpdate", () => {
+            this.update();
+        });
     }
 
     viewDoc(doc: JustPaintDocument) {

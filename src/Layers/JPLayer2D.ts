@@ -35,12 +35,18 @@ export class JPLayer2D extends JPLayer {
     }
 
     createUndoCheckPoint() {
-        this.checkpoints.push(this.canvas.transferToImageBitmap());
+        console.log("Creating checkpoint on layer " + this.name);
+        let checkpoint = this.canvas.transferToImageBitmap();
+        this.checkpoints.push(checkpoint);
+        this.ctx.drawImage(checkpoint, 0, 0);
     }
 
     undo() {
+        // console.log("Undoing on layer " + this.name);
         if (this.checkpoints.length > 0) {
+            console.log(this.checkpoints.length);
             let checkpoint = this.checkpoints.pop() as ImageBitmap;
+            this.clear();
             this.ctx.drawImage(checkpoint, 0, 0);
         }
     }

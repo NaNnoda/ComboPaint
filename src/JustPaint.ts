@@ -1,24 +1,23 @@
 import JustPaintDocument from "./Documents/JustPaintDocument";
 import {DocCanvasViewer} from "./UserInterfaceManagers/DocCanvasViewer";
 import {PaintTool} from "./PaintTools/PaintTool";
-import {JPLayer} from "./Layers/JPLayer";
 import {nullLayer} from "./Layers/NullLayer";
 import {BasicPen} from "./PaintTools/BasicPen";
-import {nullCPDoc} from "./Documents/NullDoc";
 import {JPLayer2D} from "./Layers/JPLayer2D";
 import {GlobalEvent} from "./Events/GlobalEvent";
 import {NullCanvasViewer} from "./UserInterfaceManagers/NullCanvasViewer";
+import {NullDoc} from "./Documents/NullDoc";
+
 
 /**
  * The main class of the JustPaint library.
  * This class is a singleton.
  */
 export class JustPaint {
-    _currDoc: JustPaintDocument = nullCPDoc;
+    _currDoc: JustPaintDocument | null = null;
     _gEvent: GlobalEvent = new GlobalEvent();
     _currTool: PaintTool | null = null;
     _viewer: DocCanvasViewer | null = null;
-
 
     _allDocs: JustPaintDocument[] = [];
     _allDocsSet: Set<JustPaintDocument> = new Set<JustPaintDocument>();
@@ -37,9 +36,7 @@ export class JustPaint {
     get currDoc(): JustPaintDocument {
         if (this._currDoc === null) {
             console.log("Current document is null");
-        }
-        if (this._currDoc === nullCPDoc) {
-            console.log("Current document is nullCPDoc");
+            return NullDoc.instance;
         }
         return this._currDoc;
     }
@@ -120,7 +117,6 @@ export class JustPaint {
     get currLayer() {
         if (!this.currDoc) {
             console.log("No current document");
-            this.currDoc = nullCPDoc;
         }
         if (this.currDoc.selectedLayer === null || this.currDoc.selectedLayer === nullLayer) {
             console.log("No layer selected");
@@ -129,7 +125,7 @@ export class JustPaint {
         return this.currDoc.selectedLayer;
     }
 
-    set currLayer(layer: JPLayer) {
+    set currLayer(layer: JPLayer2D) {
         this.currDoc.selectedLayer = layer;
     }
 

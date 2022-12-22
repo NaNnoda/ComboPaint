@@ -1,9 +1,7 @@
 import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {PointerPoint} from "../Events/PointerEventHandler";
-import {JPLayer} from "../Layers/JPLayer";
-import JustPaintDocument from "../Documents/JustPaintDocument";
-import {DocCanvasViewer} from "../UserInterfaceManagers/DocCanvasViewer";
-import {justPaint, JustPaint} from "../JustPaint";
+import {justPaint} from "../JustPaint";
+// import {justPaint} from "../JustPaint";
 
 export abstract class PaintTool {
     name: string;
@@ -73,6 +71,7 @@ export abstract class PaintTool {
     }
 
     commitChanges() {
+
         this.doc.render();
         this.viewer.update();
     }

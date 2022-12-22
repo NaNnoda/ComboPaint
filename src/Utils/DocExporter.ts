@@ -1,10 +1,10 @@
-import ComboPaintDocument from "../Documents/ComboPaintDocument";
+import JustPaintDocument from "../Documents/JustPaintDocument";
 import * as psd from "ag-psd"
-import {CPLayer} from "../Layers/CPLayer";
+import {JPLayer} from "../Layers/JPLayer";
 
 
 export class DocExporter {
-    static exportPNG(doc: ComboPaintDocument): string {
+    static exportPNG(doc: JustPaintDocument): string {
         doc.render();
         let canvas = document.createElement("canvas");
         canvas.width = doc.width;
@@ -20,7 +20,7 @@ export class DocExporter {
         return canvas.toDataURL("image/png");
     }
 
-    static exportPSD(doc: ComboPaintDocument): string {
+    static exportPSD(doc: JustPaintDocument): string {
         console.log("Exporting to PSD");
 
         class PsdLayer {
@@ -36,7 +36,7 @@ export class DocExporter {
             name: string;
             canvas: OffscreenCanvas;
 
-            constructor(cpLayer: CPLayer) {
+            constructor(cpLayer: JPLayer) {
                 this.top = 0;
                 this.left = 0;
                 this.bottom = cpLayer.height;
@@ -79,16 +79,6 @@ export class DocExporter {
             let psdLayer = new PsdLayer(layer);
             psdDoc.children.push(psdLayer);
         }
-
-        // let psdDict = {
-        //     width: doc.width,
-        //     height: doc.height,
-        //     children: [
-        //         {
-        //             name: "Layer 1",
-        //         }
-        //     ]
-        // }
 
         let buffer = psd.writePsd(psdDoc);
         let blob = new Blob([buffer], {type: "image/psd"});

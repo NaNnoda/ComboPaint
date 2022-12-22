@@ -1,8 +1,8 @@
-import {CPLayer2D} from "./CPLayer2D";
+import {JPLayer2D} from "./JPLayer2D";
 
 type backgroundStyle = string | CanvasGradient | CanvasPattern | "checkerboard" | "solid" | "image";
 
-export class BackgroundLayer extends CPLayer2D {
+export class BackgroundLayer extends JPLayer2D {
     fillStyle: backgroundStyle;
 
     _color1: string = "#ffffff";

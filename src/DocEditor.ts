@@ -1,9 +1,8 @@
-import ComboPaintDocument from "./Documents/ComboPaintDocument";
-import {CPLayer} from "./Layers/CPLayer";
+import JustPaintDocument from "./Documents/JustPaintDocument";
 
 export class DocEditor {
-    doc: ComboPaintDocument;
-    constructor(doc: ComboPaintDocument) {
+    doc: JustPaintDocument;
+    constructor(doc: JustPaintDocument) {
         this.doc = doc;
     }
 }

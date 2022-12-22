@@ -1,14 +1,15 @@
-import ComboPaintDocument from "../Documents/ComboPaintDocument";
+import JustPaintDocument from "../Documents/JustPaintDocument";
 import {Vec2} from "../MathUtils/Vec2";
 import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {ViewerEventsHandler} from "../Events/ViewerEventsHandler";
 import {BackgroundLayer} from "../Layers/BackgroundLayer";
-import {GlobalValues} from "../GlobalValues";
-import {CPLayer} from "../Layers/CPLayer";
+import {justPaint} from "../JustPaint";
+
 import {nullLayer, NullLayer} from "../Layers/NullLayer";
 import {HTMLCanvasWrapper2D} from "../CanvasWrappers/HTMLCanvasWrapper2D";
 import {SmoothNumber} from "../SmoothNumber";
-import {CPLayer2D} from "../Layers/CPLayer2D";
+import {JPLayer2D} from "../Layers/JPLayer2D";
+import {JPLayer} from "../Layers/JPLayer";
 
 /**
  * Class that renders a ComboPaintDocument to a canvas.
@@ -16,12 +17,10 @@ import {CPLayer2D} from "../Layers/CPLayer2D";
  */
 export class DocCanvasViewer extends HTMLCanvasWrapper2D {
     _state: ViewerState;
-
     paintToolEventHandler: PaintToolEventHandler;
     events: ViewerEventsHandler;
-
-    docBackground: CPLayer = NullLayer.getInstance();
-    docWrapper: CPLayer2D = nullLayer;
+    docBackground: JPLayer = NullLayer.getInstance();
+    docWrapper: JPLayer2D = nullLayer;
 
     constructor(canvas: HTMLCanvasElement) {
         super(canvas);
@@ -40,7 +39,7 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
         }
     }
 
-    viewDoc(doc: ComboPaintDocument) {
+    viewDoc(doc: JustPaintDocument) {
         this._state = new ViewerState();
         let offset = new Vec2(0, 0);
         let scale = 3;
@@ -53,7 +52,7 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
         this.docBackground = new BackgroundLayer(doc.width, doc.height)
             .setColor1("#ffffff")
             .setColor2("#ffa166");
-        this.docWrapper = new CPLayer2D(doc.width, doc.height, "DocWrapper");
+        this.docWrapper = new JPLayer2D(doc.width, doc.height, "DocWrapper");
     }
 
     setUpEventHandlers() {
@@ -118,7 +117,7 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
     }
 
     get doc() {
-        return GlobalValues.currDoc;
+        return justPaint.currDoc;
     }
 
     viewToDocCoords(x: number, y: number) {

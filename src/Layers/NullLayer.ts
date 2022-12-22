@@ -1,7 +1,7 @@
-import {CPLayer} from "./CPLayer";
-import {CPLayer2D} from "./CPLayer2D";
 
-export class NullLayer extends CPLayer2D {
+import {JPLayer2D} from "./JPLayer2D";
+
+export class NullLayer extends JPLayer2D {
     private static instance: NullLayer | null = null;
 
     public static getInstance(): NullLayer {

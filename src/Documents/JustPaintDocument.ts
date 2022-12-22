@@ -1,10 +1,11 @@
-import {CPLayer} from "../Layers/CPLayer";
+import {JPLayer2D} from "../Layers/JPLayer2D";
 import {OffScreenCanvasWrapper2D} from "../CanvasWrappers/OffScreenCanvasWrapper2D";
 import {nullLayer} from "../Layers/NullLayer";
+import {JPLayer} from "../Layers/JPLayer";
 
-export default class ComboPaintDocument extends OffScreenCanvasWrapper2D {
-    layers: CPLayer[] = [];
-    selectedLayer: CPLayer = nullLayer;
+export default class JustPaintDocument extends OffScreenCanvasWrapper2D {
+    layers: JPLayer2D[] = [];
+    selectedLayer: JPLayer2D = nullLayer;
     name: string;
 
     get height() {
@@ -23,26 +24,39 @@ export default class ComboPaintDocument extends OffScreenCanvasWrapper2D {
         this.canvas.width = width;
     }
 
-    constructor(size: [number, number], layers: CPLayer[] = [], name: string) {
+    constructor(size: [number, number], layers: JPLayer2D[] = [], name: string) {
         super(size[0], size[1]);
         this.name = name;
 
         this.addLayers(...layers);
     }
 
-    addLayer(layer: CPLayer, index: number = this.layers.length) {
+    addLayer(layer: JPLayer2D, index: number = this.layers.length) {
         this.layers.splice(index, 0, layer);
         if (this.selectedLayer == nullLayer) {
             this.selectedLayer = layer;
         }
     }
 
-    addLayers(...layers: CPLayer[]) {
+    addLayers(...layers: JPLayer2D[]) {
         for (let layer of layers) {
             this.addLayer(layer);
         }
         if (this.selectedLayer == null && layers.length > 0) {
             this.selectedLayer = layers[0];
+        }
+    }
+
+    createUndoCheckPoint() {
+        console.log("Creating undo checkpoint");
+        for (let layer of this.layers) {
+            layer.createUndoCheckPoint();
+        }
+    }
+
+    undo() {
+        for (let layer of this.layers) {
+            layer.undo();
         }
     }
 
@@ -75,7 +89,7 @@ export default class ComboPaintDocument extends OffScreenCanvasWrapper2D {
         this.isDirty = false;
     }
 
-    drawLayer(layer: CPLayer) {
+    drawLayer(layer: JPLayer2D) {
         this.ctx.globalAlpha = layer.opacity;
         this.ctx.globalCompositeOperation = layer.blendMode;
         layer.render();

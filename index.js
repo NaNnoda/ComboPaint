@@ -12887,12 +12887,10 @@ var OffScreenCanvasWrapper2D = class extends OffScreenCanvasWrapper {
   }
 };
 
-// src/Layers/CPLayer.ts
-var CPLayer = class extends OffScreenCanvasWrapper {
+// src/Layers/JPLayer.ts
+var JPLayer = class extends OffScreenCanvasWrapper {
   constructor(width, height, name = "New Layer", ctxId) {
     super(width, height, ctxId);
-    this.width = width;
-    this.height = height;
     this.name = name;
     this.visible = true;
     this.opacity = 1;
@@ -12900,10 +12898,14 @@ var CPLayer = class extends OffScreenCanvasWrapper {
   }
 };
 
-// src/Layers/CPLayer2D.ts
-var CPLayer2D = class extends CPLayer {
+// src/Layers/JPLayer2D.ts
+var JPLayer2D = class extends JPLayer {
   constructor(width, height, name = "New Layer") {
     super(width, height, name, "2d");
+    this.checkpoints = [];
+  }
+  get canvas() {
+    return super.canvas;
   }
   get ctx() {
     return super.ctx;
@@ -12922,10 +12924,19 @@ var CPLayer2D = class extends CPLayer {
     this.ctx.clearRect(0, 0, this.width, this.height);
     return this;
   }
+  createUndoCheckPoint() {
+    this.checkpoints.push(this.canvas.transferToImageBitmap());
+  }
+  undo() {
+    if (this.checkpoints.length > 0) {
+      let checkpoint = this.checkpoints.pop();
+      this.ctx.drawImage(checkpoint, 0, 0);
+    }
+  }
 };
 
 // src/Layers/NullLayer.ts
-var _NullLayer = class extends CPLayer2D {
+var _NullLayer = class extends JPLayer2D {
   static getInstance() {
     if (!_NullLayer.instance) {
       _NullLayer.instance = new _NullLayer(1, 1, "Null Layer");
@@ -12941,8 +12952,8 @@ var NullLayer = _NullLayer;
 NullLayer.instance = null;
 var nullLayer = NullLayer.getInstance();
 
-// src/Documents/ComboPaintDocument.ts
-var ComboPaintDocument = class extends OffScreenCanvasWrapper2D {
+// src/Documents/JustPaintDocument.ts
+var JustPaintDocument = class extends OffScreenCanvasWrapper2D {
   constructor(size, layers = [], name) {
     super(size[0], size[1]);
     this.layers = [];
@@ -12974,6 +12985,17 @@ var ComboPaintDocument = class extends OffScreenCanvasWrapper2D {
     }
     if (this.selectedLayer == null && layers.length > 0) {
       this.selectedLayer = layers[0];
+    }
+  }
+  createUndoCheckPoint() {
+    console.log("Creating undo checkpoint");
+    for (let layer of this.layers) {
+      layer.createUndoCheckPoint();
+    }
+  }
+  undo() {
+    for (let layer of this.layers) {
+      layer.undo();
     }
   }
   selectLayerByIndex(index) {
@@ -13252,7 +13274,7 @@ var ViewerEventsHandler = class extends EventHandler {
 };
 
 // src/Layers/BackgroundLayer.ts
-var BackgroundLayer = class extends CPLayer2D {
+var BackgroundLayer = class extends JPLayer2D {
   constructor(width, height, fillStyle = "checkerboard") {
     super(width, height, "Background");
     this._color1 = "#ffffff";
@@ -13412,7 +13434,7 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
     this.state._docScaleTarget = scale;
     console.log("setting background");
     this.docBackground = new BackgroundLayer(doc.width, doc.height).setColor1("#ffffff").setColor2("#ffa166");
-    this.docWrapper = new CPLayer2D(doc.width, doc.height, "DocWrapper");
+    this.docWrapper = new JPLayer2D(doc.width, doc.height, "DocWrapper");
   }
   setUpEventHandlers() {
     this.events.registerEvent("midDrag", (e) => {
@@ -13462,7 +13484,7 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
     return this._state;
   }
   get doc() {
-    return GlobalValues.currDoc;
+    return justPaint.currDoc;
   }
   viewToDocCoords(x, y) {
     return new Vec2(
@@ -13658,121 +13680,158 @@ var ViewerState = class {
   }
 };
 
-// src/Documents/NullCPDoc.ts
-var NullCPDoc = class extends ComboPaintDocument {
+// src/Documents/NullDoc.ts
+var NullDoc = class extends JustPaintDocument {
   static get instance() {
-    if (NullCPDoc._instance === null) {
-      NullCPDoc._instance = new NullCPDoc([1, 1], [nullLayer], "nullCPDoc");
+    if (NullDoc._instance === null) {
+      NullDoc._instance = new NullDoc([1, 1], [nullLayer], "nullCPDoc");
     }
-    return NullCPDoc._instance;
+    return NullDoc._instance;
   }
 };
-var nullCPDoc = NullCPDoc.instance;
+var nullCPDoc = NullDoc.instance;
 
 // src/Events/GlobalEvent.ts
 var GlobalEvent = class extends EventHandler {
 };
 
-// src/GlobalValues.ts
-var _GlobalValues = class {
-  static get currDoc() {
+// src/UserInterfaceManagers/NullCanvasViewer.ts
+var _NullCanvasViewer = class extends DocCanvasViewer {
+  constructor() {
+    let canvas = document.createElement("canvas");
+    super(canvas);
+  }
+  static get instance() {
+    if (_NullCanvasViewer._instance === null) {
+      _NullCanvasViewer._instance = new _NullCanvasViewer();
+    }
+    return _NullCanvasViewer._instance;
+  }
+};
+var NullCanvasViewer = _NullCanvasViewer;
+NullCanvasViewer._instance = null;
+
+// src/JustPaint.ts
+var _JustPaint = class {
+  constructor() {
+    this._currDoc = nullCPDoc;
+    this._gEvent = new GlobalEvent();
+    this._currTool = null;
+    this._viewer = null;
+    this._allDocs = [];
+    this._allDocsSet = /* @__PURE__ */ new Set();
+  }
+  static get instance() {
+    if (_JustPaint._instance === null) {
+      console.log("Creating new instance of JustPaint");
+      _JustPaint._instance = new _JustPaint();
+    }
+    return _JustPaint._instance;
+  }
+  get currDoc() {
     if (this._currDoc === null) {
       console.log("Current document is null");
     }
     if (this._currDoc === nullCPDoc) {
       console.log("Current document is nullCPDoc");
     }
-    return _GlobalValues._currDoc;
+    return this._currDoc;
   }
-  static get events() {
+  get events() {
     return this._gEvent;
   }
-  static set currDoc(doc) {
-    _GlobalValues._currDoc = doc;
-    _GlobalValues.viewer.viewDoc(doc);
+  set currDoc(doc) {
+    this._currDoc = doc;
+    this.viewer.viewDoc(doc);
     if (!this.allDocsSet.has(doc)) {
       this.addDoc(doc);
     }
   }
-  static addDoc(doc) {
-    _GlobalValues.allDocs.push(doc);
-    _GlobalValues.allDocsSet.add(doc);
+  addDoc(doc) {
+    this.allDocs.push(doc);
+    this.allDocsSet.add(doc);
   }
-  static removeDoc(doc) {
+  removeDoc(doc) {
     if (!this.allDocsSet.has(doc)) {
       console.log("Doc not found");
       return;
     }
-    let index = _GlobalValues.allDocs.indexOf(doc);
+    let index = this.allDocs.indexOf(doc);
     if (index !== -1) {
-      _GlobalValues.allDocs.splice(index, 1);
+      this.allDocs.splice(index, 1);
     }
-    _GlobalValues.allDocsSet.delete(doc);
-    if (_GlobalValues.currDoc === doc) {
-      if (_GlobalValues.allDocs.length > 0) {
-        _GlobalValues.currDoc = _GlobalValues.allDocs[0];
+    this.allDocsSet.delete(doc);
+    if (this.currDoc === doc) {
+      if (this.allDocs.length > 0) {
+        this.currDoc = this.allDocs[0];
       }
     }
   }
-  static get allDocsSet() {
-    return _GlobalValues._allDocsSet;
+  get allDocsSet() {
+    return this._allDocsSet;
   }
-  static get allDocs() {
-    return _GlobalValues._allDocs;
+  get allDocs() {
+    return this._allDocs;
   }
-  static get currTool() {
-    return _GlobalValues._currTool;
+  get currTool() {
+    if (this._currTool === null) {
+      console.log("Current tool is null");
+      return new BasicPen();
+    }
+    return this._currTool;
   }
-  static set currTool(tool) {
-    _GlobalValues._currTool = tool;
+  set currTool(tool) {
+    this._currTool = tool;
     tool.eventHandler = this.viewer.paintToolEventHandler;
   }
-  static get viewer() {
-    return _GlobalValues._viewer;
+  get viewer() {
+    if (this._viewer === null) {
+      console.log("Viewer is null");
+      return NullCanvasViewer.instance;
+    }
+    return this._viewer;
   }
-  static set viewer(viewer) {
-    _GlobalValues._viewer = viewer;
+  set viewer(viewer) {
+    this._viewer = viewer;
   }
-  static get currLayer() {
-    if (!_GlobalValues.currDoc) {
+  get currLayer() {
+    if (!this.currDoc) {
       console.log("No current document");
       this.currDoc = nullCPDoc;
     }
-    if (_GlobalValues.currDoc.selectedLayer === null || _GlobalValues.currDoc.selectedLayer === nullLayer) {
+    if (this.currDoc.selectedLayer === null || this.currDoc.selectedLayer === nullLayer) {
       console.log("No layer selected");
       return nullLayer;
     }
-    return _GlobalValues.currDoc.selectedLayer;
+    return this.currDoc.selectedLayer;
   }
-  static set currLayer(layer) {
-    _GlobalValues.currDoc.selectedLayer = layer;
+  set currLayer(layer) {
+    this.currDoc.selectedLayer = layer;
   }
-  static init(canvas, doc = null, tool = null) {
+  init(canvas, doc = null, tool = null) {
     if (doc === null) {
-      doc = new ComboPaintDocument(
+      doc = new JustPaintDocument(
         [3200, 1800],
-        [new CPLayer2D(3200, 1800, "Layer 1").fill("#ffffff")],
+        [new JPLayer2D(3200, 1800, "Layer 1").fill("#ffffff")],
         "Untitled"
       );
     }
     if (tool === null) {
       tool = new BasicPen();
     }
-    _GlobalValues.viewer = new DocCanvasViewer(canvas);
-    _GlobalValues.currDoc = doc;
+    this.viewer = new DocCanvasViewer(canvas);
+    this.currDoc = doc;
     if (this.currDoc.selectedLayer !== null) {
       this.currLayer = this.currDoc.selectedLayer;
     }
-    _GlobalValues.currTool = tool;
+    this.currTool = tool;
     this.currDoc.render();
     this.viewer.render();
   }
 };
-var GlobalValues = _GlobalValues;
-GlobalValues._currDoc = nullCPDoc;
-GlobalValues._allDocs = [];
-GlobalValues._allDocsSet = /* @__PURE__ */ new Set();
-GlobalValues._gEvent = new GlobalEvent();
+var JustPaint = _JustPaint;
+JustPaint._instance = null;
+var justPaint = JustPaint.instance;
 
 // src/PaintTools/PaintTool.ts
 var PaintTool = class {
@@ -13784,13 +13843,13 @@ var PaintTool = class {
     this.name = name;
   }
   get layer() {
-    if (GlobalValues.currDoc.selectedLayer === null) {
+    if (justPaint.currDoc.selectedLayer === null) {
       throw new Error("Layer not set");
     }
-    return GlobalValues.currDoc.selectedLayer;
+    return justPaint.currDoc.selectedLayer;
   }
   get ctx() {
-    return GlobalValues.currLayer.ctx;
+    return justPaint.currLayer.ctx;
   }
   get eventHandler() {
     if (this._eventHandler === null) {
@@ -13810,10 +13869,10 @@ var PaintTool = class {
     return this.layer.canvas;
   }
   get doc() {
-    return GlobalValues.currDoc;
+    return justPaint.currDoc;
   }
   get viewer() {
-    return GlobalValues.viewer;
+    return justPaint.viewer;
   }
   onDown(point) {
     console.debug("Down");
@@ -13899,18 +13958,15 @@ var PaintTool2D = class extends PaintTool {
   }
   commitChanges() {
     this.doc.isDirty = true;
-    if (this._imageData !== null) {
-      this.ctx.putImageData(this._imageData, 0, 0);
-      this._imageData = null;
-    }
     super.commitChanges();
   }
 };
 
 // src/PaintTools/BasicPen.ts
+console.log("BasicPen.ts");
 var BasicPen = class extends PaintTool2D {
   constructor() {
-    super();
+    super(...arguments);
     this._color = "#000000";
     this._maxWidth = 4;
     this._minWidth = 0;
@@ -13930,6 +13986,11 @@ var BasicPen = class extends PaintTool2D {
       this.ctx.restore();
       this.commitChanges();
     }
+  }
+  onUp(point) {
+    super.onUp(point);
+    this.doc.createUndoCheckPoint();
+    this.commitChanges();
   }
 };
 
@@ -14121,31 +14182,130 @@ var DropdownManager = class {
   }
 };
 
+// src/UserInterfaceManagers/ShortcutManager.ts
+var ShortcutManager = class {
+  constructor() {
+    this.shortcuts = [];
+    document.addEventListener("keydown", (e) => {
+      this.activateShortcut(e);
+      return true;
+    });
+  }
+  activateShortcut(event) {
+    console.log("Event: " + event.key);
+    for (let shortcut of this.shortcuts) {
+      if (shortcut.key == event.key) {
+        shortcut.callback();
+        event.preventDefault();
+        return;
+      }
+    }
+  }
+  addShortcut(shortcut) {
+    this.shortcuts.push(shortcut);
+  }
+  removeShortcut(key) {
+    for (let i = 0; i < this.shortcuts.length; i++) {
+      if (this.shortcuts[i].key == key) {
+        this.shortcuts.splice(i, 1);
+        return;
+      }
+    }
+  }
+};
+var shortcutManager = new ShortcutManager();
+var Shortcut = class {
+  constructor(key, ctrl, shift, meta, altKey, execute) {
+    this.ctrlKey = false;
+    this.shiftKey = false;
+    this.metaKey = false;
+    this.altKey = false;
+    this.key = key;
+    this.ctrlKey = ctrl;
+    this.shiftKey = shift;
+    this.metaKey = meta;
+    this.altKey = altKey;
+    this.callback = execute;
+  }
+  matches(event) {
+    if (event.key != this.key) {
+      return false;
+    }
+    if (event.ctrlKey != this.ctrlKey) {
+      return false;
+    }
+    if (event.shiftKey != this.shiftKey) {
+      return false;
+    }
+    if (event.metaKey != this.metaKey) {
+      return false;
+    }
+    if (event.altKey != this.altKey) {
+      return false;
+    }
+    return true;
+  }
+  static fromString(shortcut, execute) {
+    let ctrl = false;
+    let shift = false;
+    let meta = false;
+    let alt = false;
+    let key = "";
+    let parts = shortcut.split("+");
+    if (parts.length < 1 || parts.length > 5) {
+      throw new Error("Invalid shortcut");
+    }
+    for (let part of parts) {
+      switch (part) {
+        case "ctrl":
+          ctrl = true;
+          break;
+        case "shift":
+          shift = true;
+          break;
+        case "meta":
+          meta = true;
+          break;
+        case "alt":
+          alt = true;
+          break;
+        default:
+          key = part;
+          break;
+      }
+    }
+    return new Shortcut(key, ctrl, shift, meta, alt, execute);
+  }
+};
+function createShortcut(shortcut, execute) {
+  shortcutManager.addShortcut(Shortcut.fromString(shortcut, execute));
+}
+
 // src/Main.ts
 function initConsole() {
-  addToConsole("GlobalValues", GlobalValues);
+  addToConsole("GlobalValues", JustPaint);
   addToConsole("Preference", Preference);
   addToConsole("save", {
     get png() {
-      let url = DocExporter.exportPNG(GlobalValues.currDoc);
-      downloadUrl(url, `${GlobalValues.currDoc.name}.png`);
-      return `Saved ${GlobalValues.currDoc.name}.png`;
+      let url = DocExporter.exportPNG(justPaint.currDoc);
+      downloadUrl(url, `${justPaint.currDoc.name}.png`);
+      return `Saved ${justPaint.currDoc.name}.png`;
     },
     get psd() {
-      let url = DocExporter.exportPSD(GlobalValues.currDoc);
-      let name = GlobalValues.currDoc.name;
-      downloadUrl(url, `${GlobalValues.currDoc.name}.psd`);
+      let url = DocExporter.exportPSD(justPaint.currDoc);
+      let name = justPaint.currDoc.name;
+      downloadUrl(url, `${justPaint.currDoc.name}.psd`);
       return `Saved ${name}.psd`;
     }
   });
-  addToConsole("currDoc", GlobalValues.currDoc);
-  addToConsole("currLayer", GlobalValues.currLayer);
-  addToConsole("currTool", GlobalValues.currTool);
+  addToConsole("currDoc", justPaint.currDoc);
+  addToConsole("currLayer", justPaint.currLayer);
+  addToConsole("currTool", justPaint.currTool);
   addToConsole("doc.addLayer", (name) => {
-    GlobalValues.currDoc.addLayer(new CPLayer2D(GlobalValues.currDoc.width, GlobalValues.currDoc.height, name));
+    justPaint.currDoc.addLayer(new JPLayer2D(justPaint.currDoc.width, justPaint.currDoc.height, name));
   });
   addToConsole("ls", () => {
-    for (let doc of GlobalValues.allDocs) {
+    for (let doc of justPaint.allDocs) {
       console.log(doc.name);
     }
   });
@@ -14155,7 +14315,7 @@ function initConsole() {
   });
 }
 function main() {
-  addToConsole("G", GlobalValues);
+  addToConsole("G", JustPaint);
   let viewCanvas = document.getElementById("viewCanvas");
   if (viewCanvas === null) {
     throw new Error("viewCanvas is null");
@@ -14165,14 +14325,14 @@ function main() {
   viewCanvas.height = 600;
   let width = 3840;
   let height = 2160;
-  let layer1 = new CPLayer2D(width, height, "Layer 1");
-  let layer2 = new CPLayer2D(width, height, "red");
+  let layer1 = new JPLayer2D(width, height, "Layer 1");
+  let layer2 = new JPLayer2D(width, height, "red");
   layer2.ctx.fillStyle = "red";
   layer2.ctx.fillRect(0, 0, width / 2, 10);
   layer2.opacity = 0.2;
-  GlobalValues.init(
+  justPaint.init(
     viewCanvas,
-    new ComboPaintDocument(
+    new JustPaintDocument(
       [width, height],
       [layer1, layer2],
       "Document 1"
@@ -14188,6 +14348,10 @@ function main() {
     console.log("layer dropdown");
   });
   initConsole();
+  createShortcut("ctrl+z", () => {
+    console.log("Undo");
+    justPaint.currDoc.undo();
+  });
 }
 main();
 console.log("Main.ts loaded");

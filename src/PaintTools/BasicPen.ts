@@ -1,15 +1,14 @@
 import {PaintTool2D} from "./PaintTool2D";
 import {PointerPoint} from "../Events/PointerEventHandler";
 
+console.log("BasicPen.ts");
 export class BasicPen extends PaintTool2D {
     _color: string = "#000000";
     _maxWidth: number = 4;
     _minWidth: number = 0;
     _blur: number = 0.5;
 
-    constructor() {
-        super();
-    }
+
 
     onPressedMove(point: PointerPoint) {
         super.onPressedMove(point);
@@ -27,5 +26,11 @@ export class BasicPen extends PaintTool2D {
             this.ctx.restore();
             this.commitChanges();
         }
+    }
+
+    onUp(point: PointerPoint) {
+        super.onUp(point);
+        this.doc.createUndoCheckPoint();
+        this.commitChanges();
     }
 }

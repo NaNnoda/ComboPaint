@@ -1,6 +1,6 @@
 import {OffScreenCanvasWrapper} from "../CanvasWrappers/OffScreenCanvasWrapper";
 
-export abstract class CPLayer extends OffScreenCanvasWrapper {
+export abstract class JPLayer extends OffScreenCanvasWrapper {
     name: string;
     visible: boolean;
     opacity: number;
@@ -8,8 +8,6 @@ export abstract class CPLayer extends OffScreenCanvasWrapper {
 
     constructor(width: number, height: number, name: string = "New Layer", ctxId: OffscreenRenderingContextId) {
         super(width, height, ctxId);
-        this.width = width;
-        this.height = height;
         this.name = name;
         this.visible = true;
         this.opacity = 1;

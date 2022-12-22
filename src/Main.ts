@@ -1,16 +1,16 @@
-import ComboPaintDocument from "./Documents/ComboPaintDocument";
-import {CPLayer} from "./Layers/CPLayer";
+import JustPaintDocument from "./Documents/JustPaintDocument";
 import {BasicPen} from "./PaintTools/BasicPen";
 import {DocExporter} from "./Utils/DocExporter";
 import {addToConsole, downloadUrl, setUnscrollable} from "./Utils/Utils";
 import {Preference} from "./Preference";
-import {GlobalValues} from "./GlobalValues";
-import {CPLayer2D} from "./Layers/CPLayer2D";
+import {justPaint, JustPaint} from "./JustPaint";
+import {JPLayer2D} from "./Layers/JPLayer2D";
 import {PaintBucket} from "./PaintTools/PaintBucket";
 import {DropdownManager} from "./UserInterfaceManagers/DropdownManager";
+import {createShortcut} from "./UserInterfaceManagers/ShortcutManager";
 
 function initConsole() {
-    addToConsole("GlobalValues", GlobalValues);
+    addToConsole("GlobalValues", JustPaint);
     addToConsole("Preference", Preference);
     // addToConsole("localStorage",localStorage);
     // addToConsole("save.png", (name: string = GlobalValues.currDoc.name) => {
@@ -23,26 +23,26 @@ function initConsole() {
     // });
     addToConsole("save", {
         get png() {
-            let url = DocExporter.exportPNG(GlobalValues.currDoc);
-            downloadUrl(url, `${GlobalValues.currDoc.name}.png`);
-            return `Saved ${GlobalValues.currDoc.name}.png`;
+            let url = DocExporter.exportPNG(justPaint.currDoc);
+            downloadUrl(url, `${justPaint.currDoc.name}.png`);
+            return `Saved ${justPaint.currDoc.name}.png`;
         },
         get psd() {
-            let url = DocExporter.exportPSD(GlobalValues.currDoc);
-            let name = GlobalValues.currDoc.name;
-            downloadUrl(url, `${GlobalValues.currDoc.name}.psd`);
+            let url = DocExporter.exportPSD(justPaint.currDoc);
+            let name = justPaint.currDoc.name;
+            downloadUrl(url, `${justPaint.currDoc.name}.psd`);
             return `Saved ${name}.psd`;
         }
     })
-    addToConsole("currDoc", GlobalValues.currDoc);
-    addToConsole("currLayer", GlobalValues.currLayer);
-    addToConsole("currTool", GlobalValues.currTool);
+    addToConsole("currDoc", justPaint.currDoc);
+    addToConsole("currLayer", justPaint.currLayer);
+    addToConsole("currTool", justPaint.currTool);
     addToConsole("doc.addLayer", (name: string) => {
-        GlobalValues.currDoc.addLayer(new CPLayer2D(GlobalValues.currDoc.width, GlobalValues.currDoc.height, name));
+        justPaint.currDoc.addLayer(new JPLayer2D(justPaint.currDoc.width, justPaint.currDoc.height, name));
     });
 
     addToConsole("ls", () => {
-        for (let doc of GlobalValues.allDocs) {
+        for (let doc of justPaint.allDocs) {
             console.log(doc.name);
         }
     })
@@ -54,7 +54,7 @@ function initConsole() {
 }
 
 function main() {
-    addToConsole("G", GlobalValues);
+    addToConsole("G", JustPaint);
 
     let viewCanvas = document.getElementById("viewCanvas") as HTMLCanvasElement;
     if (viewCanvas === null) {
@@ -68,15 +68,15 @@ function main() {
     let width = 3840;
     let height = 2160;
     // let layer0 = new BackgroundLayer(width, height, "checkerboard");
-    let layer1 = new CPLayer2D(width, height, "Layer 1");
-    let layer2 = new CPLayer2D(width, height, "red");
+    let layer1 = new JPLayer2D(width, height, "Layer 1");
+    let layer2 = new JPLayer2D(width, height, "red");
     layer2.ctx.fillStyle = "red";
     layer2.ctx.fillRect(0, 0, width / 2, 10);
     layer2.opacity = 0.2;
 
-    GlobalValues.init(
+    justPaint.init(
         viewCanvas,
-        new ComboPaintDocument(
+        new JustPaintDocument(
             [width, height],
             [layer1, layer2],
             "Document 1"
@@ -87,12 +87,19 @@ function main() {
     let dropdownManager = new DropdownManager(dropdownDiv);
     dropdownManager.addDropdown("debug", "log", () => {
         console.log("layer dropdown");
-    });dropdownManager.addDropdown("debug", "sadsda", () => {
+    });
+    dropdownManager.addDropdown("debug", "sadsda", () => {
         console.log("layer dropdown");
     });
 
     initConsole();
+
+    createShortcut("ctrl+z", () => {
+        console.log("Undo");
+        justPaint.currDoc.undo();
+    });
 }
 
 main();
 console.log("Main.ts loaded");
+

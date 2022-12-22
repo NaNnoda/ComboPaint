@@ -33,7 +33,6 @@ export class PaintBucket extends PaintTool2D {
             }
         }
     }
-
     isInRange(pixel1: { r: number, g: number, b: number, a: number },
               pixel2: { r: number, g: number, b: number, a: number },
               tolerance: number) {

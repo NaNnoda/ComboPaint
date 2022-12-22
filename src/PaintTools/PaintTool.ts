@@ -1,24 +1,24 @@
 import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {PointerPoint} from "../Events/PointerEventHandler";
-import {CPLayer} from "../Layers/CPLayer";
-import ComboPaintDocument from "../Documents/ComboPaintDocument";
+import {JPLayer} from "../Layers/JPLayer";
+import JustPaintDocument from "../Documents/JustPaintDocument";
 import {DocCanvasViewer} from "../UserInterfaceManagers/DocCanvasViewer";
-import {GlobalValues} from "../GlobalValues";
+import {justPaint, JustPaint} from "../JustPaint";
 
 export abstract class PaintTool {
     name: string;
     _eventHandler: PaintToolEventHandler | null = null;
 
     get layer() {
-        if (GlobalValues.currDoc.selectedLayer === null) {
+        if (justPaint.currDoc.selectedLayer === null) {
             throw new Error("Layer not set");
         }
 
-        return GlobalValues.currDoc.selectedLayer;
+        return justPaint.currDoc.selectedLayer;
     }
 
     get ctx() {
-        return GlobalValues.currLayer.ctx;
+        return justPaint.currLayer.ctx;
     }
 
     get eventHandler() {
@@ -42,14 +42,14 @@ export abstract class PaintTool {
     }
 
     get doc() {
-        return GlobalValues.currDoc;
+        return justPaint.currDoc;
     }
 
     get viewer() {
-        return GlobalValues.viewer;
+        return justPaint.viewer;
     }
 
-    protected constructor(eventHandler: PaintToolEventHandler | null = null, name: string | null = null) {
+     constructor(eventHandler: PaintToolEventHandler | null = null, name: string | null = null) {
         if (name === null) {
             name = this.constructor.name;
         }

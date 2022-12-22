@@ -41,6 +41,7 @@ export class JPLayer2D extends JPLayer implements IUndoObject{
         let checkpoint = this.canvas.transferToImageBitmap();
         this.checkpoints.push(checkpoint);
         this.ctx.drawImage(checkpoint, 0, 0);
+        this.needsCheckpoint = false;
     }
 
     undo() {

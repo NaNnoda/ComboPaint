@@ -64,7 +64,6 @@ export default class JustPaintDocument extends OffScreenCanvasWrapper2D implemen
         for (let layer of this.layers) {
             if (layer.needsCheckpoint) {
                 layer.createUndoCheckpoint();
-                layer.needsCheckpoint = false;
                 this.history.push(layer);
             }
         }

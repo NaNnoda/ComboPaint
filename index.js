@@ -12930,6 +12930,7 @@ var JPLayer2D = class extends JPLayer {
     let checkpoint = this.canvas.transferToImageBitmap();
     this.checkpoints.push(checkpoint);
     this.ctx.drawImage(checkpoint, 0, 0);
+    this.needsCheckpoint = false;
   }
   undo() {
     if (this.checkpoints.length > 0) {
@@ -13049,7 +13050,6 @@ var JustPaintDocument = class extends OffScreenCanvasWrapper2D {
     for (let layer of this.layers) {
       if (layer.needsCheckpoint) {
         layer.createUndoCheckpoint();
-        layer.needsCheckpoint = false;
         this.history.push(layer);
       }
     }

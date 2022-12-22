@@ -1,4 +1,4 @@
-import {Canvas, CanvasCtx, ICanvasWrapper} from "./ICanvasWrapper";
+import type {Canvas, CanvasCtx, ICanvasWrapper} from "./ICanvasWrapper";
 
 export abstract class CanvasWrapper implements ICanvasWrapper {
     _canvas: Canvas;

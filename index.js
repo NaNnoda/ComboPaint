@@ -12903,6 +12903,7 @@ var JPLayer2D = class extends JPLayer {
   constructor(width, height, name = "New Layer") {
     super(width, height, name, "2d");
     this.checkpoints = [];
+    this.needsCheckpoint = false;
   }
   get canvas() {
     return super.canvas;
@@ -12924,7 +12925,7 @@ var JPLayer2D = class extends JPLayer {
     this.ctx.clearRect(0, 0, this.width, this.height);
     return this;
   }
-  createUndoCheckPoint() {
+  createUndoCheckpoint() {
     console.log("Creating checkpoint on layer " + this.name);
     let checkpoint = this.canvas.transferToImageBitmap();
     this.checkpoints.push(checkpoint);
@@ -12936,6 +12937,11 @@ var JPLayer2D = class extends JPLayer {
       let checkpoint = this.checkpoints.pop();
       this.clear();
       this.ctx.drawImage(checkpoint, 0, 0);
+    }
+  }
+  removeFirstCheckpoint() {
+    if (this.checkpoints.length > 0) {
+      this.checkpoints.shift();
     }
   }
 };
@@ -13000,6 +13006,7 @@ var JustPaintDocument = class extends OffScreenCanvasWrapper2D {
   constructor(size, layers = [], name) {
     super(size[0], size[1]);
     this.layers = [];
+    this.history = [];
     this.selectedLayer = nullLayer;
     this.name = name;
     this.addLayers(...layers);
@@ -13037,19 +13044,37 @@ var JustPaintDocument = class extends OffScreenCanvasWrapper2D {
       this.selectedLayer = layers[0];
     }
   }
-  createUndoCheckPoint() {
+  createUndoCheckpoint() {
     console.log("Creating undo checkpoint");
     for (let layer of this.layers) {
-      layer.createUndoCheckPoint();
+      if (layer.needsCheckpoint) {
+        layer.createUndoCheckpoint();
+        layer.needsCheckpoint = false;
+        this.history.push(layer);
+      }
+    }
+    if (this.history.length > 10) {
+      this.removeFirstCheckpoint();
+    }
+  }
+  removeFirstCheckpoint() {
+    if (this.history.length > 0) {
+      this.history[0].removeFirstCheckpoint();
+      this.history.shift();
+    } else {
+      console.log("No checkpoints to remove");
     }
   }
   undo() {
-    for (let layer of this.layers) {
-      layer.undo();
+    console.log("Undoing on document " + this.name);
+    if (this.history.length > 0) {
+      console.log("Undoing on layer " + this.history[this.history.length - 1]);
+      this.history[this.history.length - 1].undo();
+      this.history.pop();
+      this.isDirty = true;
+      this.render();
+      globalEvent.triggerEvent("docCanvasUpdate");
     }
-    this.isDirty = true;
-    this.render();
-    globalEvent.triggerEvent("docCanvasUpdate");
   }
   selectLayerByIndex(index) {
     if (index < 0 || index >= this.layers.length) {
@@ -14006,8 +14031,8 @@ var BasicPen = class extends PaintTool2D {
   }
   onDown(point) {
     super.onUp(point);
-    this.doc.createUndoCheckPoint();
-    this.commitChanges();
+    this.layer.needsCheckpoint = true;
+    this.doc.createUndoCheckpoint();
   }
 };
 
@@ -14095,13 +14120,25 @@ function setUnscrollable(element) {
   element.style.overflow = "hidden";
 }
 
-// src/Preference.ts
+// src/Global/Preference.ts
 var Preference = class {
-  static get(key) {
+  static get instance() {
+    if (this._instance === null) {
+      this._instance = new this();
+    }
+    return this._instance;
+  }
+  get(key) {
     return localStorage.getItem(key);
   }
-  static set(key, value) {
+  set(key, value) {
     localStorage.setItem(key, value);
+  }
+  get maxUndo() {
+    if (this.get("maxUndo") === null) {
+      this.set("maxUndo", 10);
+    }
+    return parseInt(this.get("maxUndo"));
   }
 };
 

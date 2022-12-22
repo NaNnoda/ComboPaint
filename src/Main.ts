@@ -2,7 +2,7 @@ import JustPaintDocument from "./Documents/JustPaintDocument";
 import {BasicPen} from "./PaintTools/BasicPen";
 import {DocExporter} from "./Utils/DocExporter";
 import {addToConsole, downloadUrl, setUnscrollable} from "./Utils/Utils";
-import {Preference} from "./Preference";
+import {Preference} from "./Global/Preference";
 import {justPaint, JustPaint} from "./Global/JustPaint";
 import {JPLayer2D} from "./Layers/JPLayer2D";
 import {PaintBucket} from "./PaintTools/PaintBucket";

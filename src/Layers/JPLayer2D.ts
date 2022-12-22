@@ -1,7 +1,9 @@
 import {JPLayer} from "./JPLayer";
+import {IUndoObject} from "../Interfaces/IUndoObject";
 
-export class JPLayer2D extends JPLayer {
+export class JPLayer2D extends JPLayer implements IUndoObject{
     checkpoints: ImageBitmap[] = [];
+    needsCheckpoint = false;
 
     get canvas(): OffscreenCanvas {
         return super.canvas as OffscreenCanvas;
@@ -34,7 +36,7 @@ export class JPLayer2D extends JPLayer {
         return this;
     }
 
-    createUndoCheckPoint() {
+    createUndoCheckpoint() {
         console.log("Creating checkpoint on layer " + this.name);
         let checkpoint = this.canvas.transferToImageBitmap();
         this.checkpoints.push(checkpoint);
@@ -48,6 +50,12 @@ export class JPLayer2D extends JPLayer {
             let checkpoint = this.checkpoints.pop() as ImageBitmap;
             this.clear();
             this.ctx.drawImage(checkpoint, 0, 0);
+        }
+    }
+
+    removeFirstCheckpoint(): void {
+        if (this.checkpoints.length > 0) {
+            this.checkpoints.shift();
         }
     }
 }

@@ -2,9 +2,11 @@ import {JPLayer2D} from "../Layers/JPLayer2D";
 import {OffScreenCanvasWrapper2D} from "../CanvasWrappers/OffScreenCanvasWrapper2D";
 import {nullLayer} from "../Global/NullLayer";
 import {globalEvent} from "../Global/GlobalEvent";
+import {IUndoObject} from "../Interfaces/IUndoObject";
 
-export default class JustPaintDocument extends OffScreenCanvasWrapper2D {
+export default class JustPaintDocument extends OffScreenCanvasWrapper2D implements IUndoObject {
     layers: JPLayer2D[] = [];
+    history: IUndoObject[] = [];
     selectedLayer: JPLayer2D = nullLayer;
     name: string;
 
@@ -57,23 +59,51 @@ export default class JustPaintDocument extends OffScreenCanvasWrapper2D {
         }
     }
 
-    createUndoCheckPoint() {
+    createUndoCheckpoint() {
         console.log("Creating undo checkpoint");
         for (let layer of this.layers) {
-            layer.createUndoCheckPoint();
+            if (layer.needsCheckpoint) {
+                layer.createUndoCheckpoint();
+                layer.needsCheckpoint = false;
+                this.history.push(layer);
+            }
+        }
+
+        if (this.history.length > 10) {
+            this.removeFirstCheckpoint();
+        }
+    }
+
+
+    removeFirstCheckpoint(): void {
+        if (this.history.length > 0) {
+            this.history[0].removeFirstCheckpoint();
+
+            this.history.shift();
+        } else {
+            console.log("No checkpoints to remove");
         }
     }
 
     undo() {
 
-        for (let layer of this.layers) {
-            layer.undo();
+        console.log("Undoing on document " + this.name);
+        if (this.history.length > 0) {
+            console.log("Undoing on layer " + this.history[this.history.length - 1]);
+            this.history[this.history.length - 1].undo();
+            this.history.pop();
+
+            this.isDirty = true;
+
+            this.render();
+
+            globalEvent.triggerEvent("docCanvasUpdate");
         }
-        this.isDirty = true;
 
-        this.render();
+        // for (let layer of this.layers) {
+        //     layer.undo();
+        // }
 
-        globalEvent.triggerEvent("docCanvasUpdate");
     }
 
     selectLayerByIndex(index: number) {

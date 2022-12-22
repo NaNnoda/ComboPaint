@@ -30,7 +30,8 @@ export class BasicPen extends PaintTool2D {
 
     onDown(point: PointerPoint) {
         super.onUp(point);
-        this.doc.createUndoCheckPoint();
-        this.commitChanges();
+        this.layer.needsCheckpoint = true;
+        this.doc.createUndoCheckpoint();
+        // this.commitChanges();
     }
 }

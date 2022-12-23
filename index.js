@@ -13281,6 +13281,7 @@ var ViewerEventsHandler = class extends EventHandler {
     });
     canvas.addEventListener("mousedown", (e) => {
       if (e.button === 1) {
+        e.preventDefault();
         this.isMidDragging = true;
         this.lastMousePoint = e;
       }
@@ -13288,6 +13289,7 @@ var ViewerEventsHandler = class extends EventHandler {
     canvas.addEventListener("mouseup", (e) => {
       if (e.button === 1) {
         this.isMidDragging = false;
+        document.body.style.cursor = "default";
       }
       this.lastMousePoint = null;
     });
@@ -13313,6 +13315,7 @@ var ViewerEventsHandler = class extends EventHandler {
     }
   }
   onMidDrag(e) {
+    e.preventDefault();
   }
   onWheel(e) {
   }
@@ -13489,6 +13492,8 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
   }
   setUpEventHandlers() {
     this.events.registerEvent("midDrag", (e) => {
+      e.preventDefault();
+      document.body.style.cursor = "grabbing";
       let offset = this.state.docOffset;
       let lastE = this.events.lastMousePoint;
       if (lastE === null) {
@@ -13516,7 +13521,7 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
       return;
     }
     console.debug("Rendering");
-    this.ctx.fillStyle = "#cfcfcf";
+    this.ctx.fillStyle = "#a8a8a8";
     this.ctx.fillRect(0, 0, this.width, this.height);
     this.renderBackground();
     this.renderDoc();
@@ -14004,29 +14009,87 @@ var PaintTool2D = class extends PaintTool {
   }
 };
 
+// src/MathUtils/HermiteSpline.ts
+function getCatmullRomSpline(p0, p1, p2, p3, t) {
+  let t2 = t * t;
+  let t3 = t2 * t;
+  let a0 = -0.5 * p0.x + 1.5 * p1.x - 1.5 * p2.x + 0.5 * p3.x;
+  let a1 = p0.x - 2.5 * p1.x + 2 * p2.x - 0.5 * p3.x;
+  let a2 = -0.5 * p0.x + 0.5 * p2.x;
+  let a3 = p1.x;
+  let x = a0 * t3 + a1 * t2 + a2 * t + a3;
+  a0 = -0.5 * p0.y + 1.5 * p1.y - 1.5 * p2.y + 0.5 * p3.y;
+  a1 = p0.y - 2.5 * p1.y + 2 * p2.y - 0.5 * p3.y;
+  a2 = -0.5 * p0.y + 0.5 * p2.y;
+  a3 = p1.y;
+  let y = a0 * t3 + a1 * t2 + a2 * t + a3;
+  return new Vec2(x, y);
+}
+
 // src/PaintTools/BasicPen.ts
 console.log("BasicPen.ts");
 var BasicPen = class extends PaintTool2D {
   constructor() {
     super(...arguments);
     this._color = "#000000";
-    this._maxWidth = 4;
-    this._minWidth = 0;
-    this._blur = 0.5;
+    this._maxWidth = 30;
+    this._minWidth = 2;
+    this._blur = 1;
+    this.lastPoints = [];
   }
   onPressedMove(point) {
     super.onPressedMove(point);
     let lastPoint = this.eventHandler.lastPoint;
-    if (lastPoint !== null) {
+    if (this.lastPoints.length > 0) {
+      let lastFourPoints = this.getLastFourPoints();
+      let p0 = lastFourPoints[0].pos;
+      let p1 = lastFourPoints[1].pos;
+      let p2 = lastFourPoints[2].pos;
+      let p3 = lastFourPoints[3].pos;
+      let widthStart = lastFourPoints[0].pressure * this._maxWidth + this._minWidth;
+      let widthEnd = lastFourPoints[3].pressure * this._maxWidth + this._minWidth;
       this.ctx.save();
       this.ctx.imageSmoothingEnabled = false;
       this.ctx.strokeStyle = this._color;
       this.ctx.lineCap = "round";
       this.ctx.filter = `blur(${this._blur}px)`;
       this.ctx.lineWidth = this._maxWidth * point.pressure + this._minWidth;
-      this.drawLine(lastPoint.x, lastPoint.y, point.x, point.y);
+      let tolerance = 40;
+      if (Math.abs(p0.x - p1.x) > tolerance || Math.abs(p0.y - p1.y) > tolerance) {
+        let step = 0.25;
+        for (let i = 0; i < 1; i += step) {
+          let currP = getCatmullRomSpline(p0, p1, p2, p3, i);
+          let nextP = getCatmullRomSpline(p0, p1, p2, p3, i + step);
+          this.ctx.lineWidth = widthStart * (1 - i) + widthEnd * i;
+          this.drawLine(currP.x, currP.y, nextP.x, nextP.y);
+        }
+      } else {
+        this.drawLine(p1.x, p1.y, p2.x, p2.y);
+      }
       this.ctx.restore();
       this.commitChanges();
+    }
+    this.lastPoints.push(point);
+  }
+  onUp(point) {
+    super.onUp(point);
+    this.commitChanges();
+    this.lastPoints = [];
+  }
+  getLastFourPoints() {
+    let points = this.lastPoints;
+    let len = points.length;
+    switch (len) {
+      case 0:
+        return [];
+      case 1:
+        return [points[0], points[0], points[0], points[0]];
+      case 2:
+        return [points[0], points[0], points[0], points[1]];
+      case 3:
+        return [points[0], points[0], points[1], points[2]];
+      default:
+        return [points[len - 4], points[len - 3], points[len - 2], points[len - 1]];
     }
   }
   onDown(point) {
@@ -14175,67 +14238,6 @@ var PaintBucket = class extends PaintTool2D {
   }
 };
 
-// src/UserInterfaceManagers/DropdownManager.ts
-var DropdownNode = class {
-  constructor(text, name, children = []) {
-    this.text = text;
-    this.name = name;
-    this.children = children;
-  }
-};
-var DropdownManager = class {
-  constructor(div) {
-    this.dropdownNodes = [];
-    this._div = div;
-  }
-  get div() {
-    return this._div;
-  }
-  addDropdown(tagName, optionName, onClick) {
-    console.log("Adding dropdown");
-    let parts = tagName.split(".");
-    let currentDict = this.dropdownNodes;
-    for (let part of parts) {
-      let found = false;
-      for (let node of currentDict) {
-        if (node.name == part) {
-          currentDict = node.children;
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        let newNode = new DropdownNode(part, part);
-        currentDict.push(newNode);
-        currentDict = newNode.children;
-      }
-    }
-    this.update();
-  }
-  update() {
-    this.div.innerHTML = "";
-    let root = this.div;
-    for (let node of this.dropdownNodes) {
-      let dropdown = document.createElement("div");
-      dropdown.classList.add("dropdown");
-      dropdown.innerHTML = node.text;
-      dropdown.addEventListener("click", () => {
-        console.log("Clicked dropdown");
-        dropdown.classList.toggle("active");
-      });
-      let dropdownContent = document.createElement("div");
-      dropdownContent.classList.add("dropdown-content");
-      for (let child of node.children) {
-        let childDiv = document.createElement("div");
-        childDiv.innerHTML = child.text;
-        dropdownContent.appendChild(childDiv);
-      }
-      dropdown.appendChild(dropdownContent);
-      root.appendChild(dropdown);
-    }
-  }
-};
-
 // src/UserInterfaceManagers/ShortcutManager.ts
 var ShortcutManager = class {
   constructor() {
@@ -14368,6 +14370,12 @@ function initConsole() {
     bucket: new PaintBucket()
   });
 }
+function resizeDom() {
+  let viewCanvas = document.getElementById("viewCanvas");
+  viewCanvas.width = window.innerWidth;
+  viewCanvas.height = window.innerHeight;
+  globalEvent.triggerEvent("docCanvasUpdate");
+}
 function main() {
   addToConsole("G", JustPaint);
   let viewCanvas = document.getElementById("viewCanvas");
@@ -14375,8 +14383,6 @@ function main() {
     throw new Error("viewCanvas is null");
   }
   setUnscrollable(viewCanvas);
-  viewCanvas.width = 800;
-  viewCanvas.height = 600;
   let width = 3840;
   let height = 2160;
   let layer1 = new JPLayer2D(width, height, "Layer 1");
@@ -14393,19 +14399,15 @@ function main() {
     ),
     new BasicPen()
   );
-  let dropdownDiv = document.getElementById("dropdown");
-  let dropdownManager = new DropdownManager(dropdownDiv);
-  dropdownManager.addDropdown("debug", "log", () => {
-    console.log("layer dropdown");
-  });
-  dropdownManager.addDropdown("debug", "sadsda", () => {
-    console.log("layer dropdown");
-  });
   initConsole();
   createShortcut("ctrl+z", () => {
     console.log("Undo");
     justPaint.currDoc.undo();
   });
+  window.onresize = (e) => {
+    resizeDom();
+  };
+  resizeDom();
 }
 main();
 console.log("Main.ts loaded");

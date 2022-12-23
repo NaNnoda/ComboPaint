@@ -23,6 +23,7 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
         });
         canvas.addEventListener("mousedown", (e) => {
             if (e.button === 1) {
+                e.preventDefault();
                 this.isMidDragging = true;
                 this.lastMousePoint = e;
             }
@@ -30,6 +31,7 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
         canvas.addEventListener("mouseup", (e) => {
             if (e.button === 1) {
                 this.isMidDragging = false;
+                document.body.style.cursor = "default";
             }
             this.lastMousePoint = null;
         });
@@ -62,6 +64,7 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
     }
 
     onMidDrag(e: MouseEvent) {
+        e.preventDefault();
         // console.log("mid drag");
     }
 

@@ -51,5 +51,4 @@ export function sleep(ms: number) {
 
 export function setUnscrollable(element: HTMLElement) {
     element.style.overflow = "hidden";
-
 }

@@ -8,6 +8,7 @@ import {JPLayer2D} from "./Layers/JPLayer2D";
 import {PaintBucket} from "./PaintTools/PaintBucket";
 import {DropdownManager} from "./UserInterfaceManagers/DropdownManager";
 import {createShortcut} from "./UserInterfaceManagers/ShortcutManager";
+import {globalEvent} from "./Global/GlobalEvent";
 
 function initConsole() {
     addToConsole("GlobalValues", JustPaint);
@@ -53,6 +54,14 @@ function initConsole() {
     })
 }
 
+function resizeDom() {
+    let viewCanvas = document.getElementById("viewCanvas") as HTMLCanvasElement;
+    viewCanvas.width = window.innerWidth;
+    viewCanvas.height = window.innerHeight;
+
+    globalEvent.triggerEvent("docCanvasUpdate")
+}
+
 function main() {
     addToConsole("G", JustPaint);
 
@@ -62,9 +71,8 @@ function main() {
     }
     setUnscrollable(viewCanvas);
 
-
-    viewCanvas.width = 800;
-    viewCanvas.height = 600;
+    // viewCanvas.width = 800;
+    // viewCanvas.height = 600;
     let width = 3840;
     let height = 2160;
     // let layer0 = new BackgroundLayer(width, height, "checkerboard");
@@ -83,14 +91,14 @@ function main() {
         ),
         new BasicPen()
     );
-    let dropdownDiv = document.getElementById("dropdown") as HTMLDivElement;
-    let dropdownManager = new DropdownManager(dropdownDiv);
-    dropdownManager.addDropdown("debug", "log", () => {
-        console.log("layer dropdown");
-    });
-    dropdownManager.addDropdown("debug", "sadsda", () => {
-        console.log("layer dropdown");
-    });
+    // let dropdownDiv = document.getElementById("dropdown") as HTMLDivElement;
+    // let dropdownManager = new DropdownManager(dropdownDiv);
+    // dropdownManager.addDropdown("debug", "log", () => {
+    //     console.log("layer dropdown");
+    // });
+    // dropdownManager.addDropdown("debug", "sadsda", () => {
+    //     console.log("layer dropdown");
+    // });
 
     initConsole();
 
@@ -98,6 +106,11 @@ function main() {
         console.log("Undo");
         justPaint.currDoc.undo();
     });
+
+    window.onresize = (e) => {
+        resizeDom();
+    }
+    resizeDom();
 }
 
 main();

@@ -65,6 +65,8 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
 
     setUpEventHandlers() {
         this.events.registerEvent("midDrag", (e: PointerEvent) => {
+            e.preventDefault();
+            document.body.style.cursor = "grabbing";
             let offset = this.state.docOffset;
             let lastE = this.events.lastMousePoint;
             if (lastE === null) {
@@ -100,7 +102,7 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
         }
 
         console.debug("Rendering");
-        this.ctx.fillStyle = "#cfcfcf";
+        this.ctx.fillStyle = "#a8a8a8";
         this.ctx.fillRect(0, 0, this.width, this.height);
         this.renderBackground();
         this.renderDoc();

@@ -1,5 +1,6 @@
-import { PointerPoint} from "../Events/PointerEventHandler";
+import {PointerPoint} from "../Events/PointerEventHandler";
 import {PaintTool} from "./PaintTool";
+import {Vec2} from "../MathUtils/Vec2";
 
 export abstract class PaintTool2D extends PaintTool {
 
@@ -26,6 +27,37 @@ export abstract class PaintTool2D extends PaintTool {
         this.ctx.moveTo(x1, y1);
         this.ctx.lineTo(x2, y2);
         this.ctx.stroke();
+    }
+
+    drawHermitCurve(p0: Vec2, p1: Vec2, p2: Vec2, p3: Vec2) {
+        this.ctx.beginPath();
+        let cp1x = p1.x + (p2.x - p0.x) / 6;
+        let cp1y = p1.y + (p2.y - p0.y) / 6;
+        let cp2x = p2.x - (p3.x - p1.x) / 6;
+        let cp2y = p2.y - (p3.y - p1.y) / 6;
+        this.ctx.moveTo(p1.x, p1.y);
+        this.ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        this.ctx.stroke();
+    }
+
+    drawBezierCurve(startPoint:Vec2, controlPoint1:Vec2, controlPoint2:Vec2, endPoint:Vec2) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(startPoint.x, startPoint.y);
+        this.ctx.bezierCurveTo(controlPoint1.x, controlPoint1.y, controlPoint2.x, controlPoint2.y, endPoint.x, endPoint.y);
+        this.ctx.stroke();
+    }
+
+    drawPointDebug(p: Vec2, size: number = 20) {
+        this.ctx.save();
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = "#ff0000";
+        this.ctx.filter = "none";
+        this.ctx.imageSmoothingEnabled = false;
+        this.drawLine(p.x - size, p.y, p.x + size, p.y);
+        this.drawLine(p.x, p.y - size, p.x, p.y + size);
+        this.drawCircle(p.x, p.y, size);
+        this.ctx.restore();
+
     }
 
     drawLineFromPoint(p1: PointerPoint, p2: PointerPoint) {

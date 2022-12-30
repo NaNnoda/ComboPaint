@@ -18,12 +18,14 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
         this.registerEvent("midDrag", this.onMidDrag.bind(this));
         this.registerEvent("wheel", this.onWheel.bind(this));
         let canvas = viewer.canvas;
+        canvas.style.cursor = "crosshair";
         canvas.addEventListener("wheel", (e) => {
             this.triggerEvent("wheel", e);
         });
         canvas.addEventListener("mousedown", (e) => {
             if (e.button === 1) {
                 e.preventDefault();
+                canvas.style.cursor = "grabbing";
                 this.isMidDragging = true;
                 this.lastMousePoint = e;
             }
@@ -31,7 +33,7 @@ export class ViewerEventsHandler extends EventHandler<WheelEventKeys> {
         canvas.addEventListener("mouseup", (e) => {
             if (e.button === 1) {
                 this.isMidDragging = false;
-                document.body.style.cursor = "default";
+                canvas.style.cursor = "crosshair";
             }
             this.lastMousePoint = null;
         });

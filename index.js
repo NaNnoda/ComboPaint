@@ -13276,12 +13276,14 @@ var ViewerEventsHandler = class extends EventHandler {
     this.registerEvent("midDrag", this.onMidDrag.bind(this));
     this.registerEvent("wheel", this.onWheel.bind(this));
     let canvas = viewer.canvas;
+    canvas.style.cursor = "crosshair";
     canvas.addEventListener("wheel", (e) => {
       this.triggerEvent("wheel", e);
     });
     canvas.addEventListener("mousedown", (e) => {
       if (e.button === 1) {
         e.preventDefault();
+        canvas.style.cursor = "grabbing";
         this.isMidDragging = true;
         this.lastMousePoint = e;
       }
@@ -13289,7 +13291,7 @@ var ViewerEventsHandler = class extends EventHandler {
     canvas.addEventListener("mouseup", (e) => {
       if (e.button === 1) {
         this.isMidDragging = false;
-        document.body.style.cursor = "default";
+        canvas.style.cursor = "crosshair";
       }
       this.lastMousePoint = null;
     });
@@ -13492,8 +13494,6 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
   }
   setUpEventHandlers() {
     this.events.registerEvent("midDrag", (e) => {
-      e.preventDefault();
-      document.body.style.cursor = "grabbing";
       let offset = this.state.docOffset;
       let lastE = this.events.lastMousePoint;
       if (lastE === null) {
@@ -13960,6 +13960,33 @@ var PaintTool2D = class extends PaintTool {
     this.ctx.lineTo(x2, y2);
     this.ctx.stroke();
   }
+  drawHermitCurve(p0, p1, p2, p3) {
+    this.ctx.beginPath();
+    let cp1x = p1.x + (p2.x - p0.x) / 6;
+    let cp1y = p1.y + (p2.y - p0.y) / 6;
+    let cp2x = p2.x - (p3.x - p1.x) / 6;
+    let cp2y = p2.y - (p3.y - p1.y) / 6;
+    this.ctx.moveTo(p1.x, p1.y);
+    this.ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    this.ctx.stroke();
+  }
+  drawBezierCurve(startPoint, controlPoint1, controlPoint2, endPoint) {
+    this.ctx.beginPath();
+    this.ctx.moveTo(startPoint.x, startPoint.y);
+    this.ctx.bezierCurveTo(controlPoint1.x, controlPoint1.y, controlPoint2.x, controlPoint2.y, endPoint.x, endPoint.y);
+    this.ctx.stroke();
+  }
+  drawPointDebug(p, size = 20) {
+    this.ctx.save();
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeStyle = "#ff0000";
+    this.ctx.filter = "none";
+    this.ctx.imageSmoothingEnabled = false;
+    this.drawLine(p.x - size, p.y, p.x + size, p.y);
+    this.drawLine(p.x, p.y - size, p.x, p.y + size);
+    this.drawCircle(p.x, p.y, size);
+    this.ctx.restore();
+  }
   drawLineFromPoint(p1, p2) {
     this.drawLine(p1.x, p1.y, p2.x, p2.y);
   }
@@ -14009,23 +14036,6 @@ var PaintTool2D = class extends PaintTool {
   }
 };
 
-// src/MathUtils/HermiteSpline.ts
-function getCatmullRomSpline(p0, p1, p2, p3, t) {
-  let t2 = t * t;
-  let t3 = t2 * t;
-  let a0 = -0.5 * p0.x + 1.5 * p1.x - 1.5 * p2.x + 0.5 * p3.x;
-  let a1 = p0.x - 2.5 * p1.x + 2 * p2.x - 0.5 * p3.x;
-  let a2 = -0.5 * p0.x + 0.5 * p2.x;
-  let a3 = p1.x;
-  let x = a0 * t3 + a1 * t2 + a2 * t + a3;
-  a0 = -0.5 * p0.y + 1.5 * p1.y - 1.5 * p2.y + 0.5 * p3.y;
-  a1 = p0.y - 2.5 * p1.y + 2 * p2.y - 0.5 * p3.y;
-  a2 = -0.5 * p0.y + 0.5 * p2.y;
-  a3 = p1.y;
-  let y = a0 * t3 + a1 * t2 + a2 * t + a3;
-  return new Vec2(x, y);
-}
-
 // src/PaintTools/BasicPen.ts
 console.log("BasicPen.ts");
 var BasicPen = class extends PaintTool2D {
@@ -14034,7 +14044,7 @@ var BasicPen = class extends PaintTool2D {
     this._color = "#000000";
     this._maxWidth = 30;
     this._minWidth = 2;
-    this._blur = 1;
+    this._blur = 0.1;
     this.lastPoints = [];
   }
   onPressedMove(point) {
@@ -14046,26 +14056,17 @@ var BasicPen = class extends PaintTool2D {
       let p1 = lastFourPoints[1].pos;
       let p2 = lastFourPoints[2].pos;
       let p3 = lastFourPoints[3].pos;
-      let widthStart = lastFourPoints[0].pressure * this._maxWidth + this._minWidth;
-      let widthEnd = lastFourPoints[3].pressure * this._maxWidth + this._minWidth;
+      let widthStart = lastFourPoints[1].pressure * this._maxWidth + this._minWidth;
+      let widthEnd = lastFourPoints[2].pressure * this._maxWidth + this._minWidth;
       this.ctx.save();
       this.ctx.imageSmoothingEnabled = false;
       this.ctx.strokeStyle = this._color;
       this.ctx.lineCap = "round";
-      this.ctx.filter = `blur(${this._blur}px)`;
-      this.ctx.lineWidth = this._maxWidth * point.pressure + this._minWidth;
-      let tolerance = 40;
-      if (Math.abs(p0.x - p1.x) > tolerance || Math.abs(p0.y - p1.y) > tolerance) {
-        let step = 0.25;
-        for (let i = 0; i < 1; i += step) {
-          let currP = getCatmullRomSpline(p0, p1, p2, p3, i);
-          let nextP = getCatmullRomSpline(p0, p1, p2, p3, i + step);
-          this.ctx.lineWidth = widthStart * (1 - i) + widthEnd * i;
-          this.drawLine(currP.x, currP.y, nextP.x, nextP.y);
-        }
-      } else {
-        this.drawLine(p1.x, p1.y, p2.x, p2.y);
-      }
+      let blur = 0.5;
+      this.ctx.filter = `blur(${blur}px)`;
+      this.ctx.lineWidth = lastFourPoints[3].pressure * this._maxWidth + this._minWidth;
+      ;
+      this.drawHermitCurve(p0, p1, p2, p3);
       this.ctx.restore();
       this.commitChanges();
     }

@@ -65,8 +65,8 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
 
     setUpEventHandlers() {
         this.events.registerEvent("midDrag", (e: PointerEvent) => {
-            e.preventDefault();
-            document.body.style.cursor = "grabbing";
+            // e.preventDefault();
+            // document.body.style.cursor = "grabbing";
             let offset = this.state.docOffset;
             let lastE = this.events.lastMousePoint;
             if (lastE === null) {

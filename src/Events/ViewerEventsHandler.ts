@@ -1,6 +1,6 @@
 import EventHandler from "./EventHandler";
 import {PointerEventHandler} from "./PointerEventHandler";
-import {DocCanvasViewer} from "../UserInterfaceManagers/DocCanvasViewer";
+import {DocCanvasViewer} from "../UI/DocCanvasViewer";
 
 export type WheelEventKeys = "midDrag" | "wheel" | "rawPointer" | "docOffset" | "docScale";
 

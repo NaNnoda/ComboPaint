@@ -19,7 +19,7 @@ JustPaint is a simple paint program written in JavaScript.
 * Run `index.html` in your browser.
 
 ## Getting Started (for developers)
-
+* Install Node.js and npm if you haven't already.
 * Run `npm install` to install dependencies.
 * Run `npm run watch` to watch for changes.
 * Program starts from `src/Main.ts`, you can start from there.

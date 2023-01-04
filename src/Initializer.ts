@@ -6,8 +6,8 @@ import {Preference} from "./Global/Preference";
 import {globalVar, JPGlobalVar} from "./Global/JPGlobalVar";
 import {JPLayer2D} from "./Layers/JPLayer2D";
 import {PaintBucket} from "./PaintTools/PaintBucket";
-import {DropdownManager} from "./UserInterfaceManagers/DropdownManager";
-import {createShortcut} from "./UserInterfaceManagers/ShortcutManager";
+import {DropdownManager} from "./UI/DropdownManager";
+import {createShortcut} from "./UI/ShortcutManager";
 import {globalEvent} from "./Global/JPGlobalEvent";
 
 function initConsole() {
@@ -62,10 +62,10 @@ function resizeDom() {
     globalEvent.triggerEvent("docCanvasUpdate")
 }
 
-function main() {
-    addToConsole("G", JPGlobalVar);
+export function initCanvas(viewCanvas: HTMLCanvasElement) {
+    // addToConsole("G", JPGlobalVar);
 
-    let viewCanvas = document.getElementById("viewCanvas") as HTMLCanvasElement;
+    // let viewCanvas = document.getElementById("viewCanvas") as HTMLCanvasElement;
     if (viewCanvas === null) {
         throw new Error("viewCanvas is null");
     }
@@ -113,6 +113,6 @@ function main() {
     resizeDom();
 }
 
-main();
-console.log("Main.ts loaded");
+// initializer();
+// console.log("Main.ts loaded");
 

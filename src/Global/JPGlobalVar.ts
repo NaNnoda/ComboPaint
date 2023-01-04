@@ -1,11 +1,11 @@
 import JustPaintDocument from "../Documents/JustPaintDocument";
-import {DocCanvasViewer} from "../UserInterfaceManagers/DocCanvasViewer";
+import {DocCanvasViewer} from "../UI/DocCanvasViewer";
 import {PaintTool} from "../PaintTools/PaintTool";
 import {nullLayer} from "./NullLayer";
 import {BasicPen} from "../PaintTools/BasicPen";
 import {JPLayer2D} from "../Layers/JPLayer2D";
 import {globalEvent, JPGlobalEvent} from "./JPGlobalEvent";
-import {NullCanvasViewer} from "../UserInterfaceManagers/NullCanvasViewer";
+import {NullCanvasViewer} from "../UI/NullCanvasViewer";
 import {NullDoc} from "./NullDoc";
 
 

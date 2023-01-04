@@ -13,7 +13,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/NaNnoda/ComboPaint/issues"
   },
@@ -24,11 +24,11 @@
     "ag-psd": "^15.0.1",
     "esbuild": "^0.16.1",
     "tsx": "^3.12.1",
-    "typescript": "^4.9.3"
-  },
-  "dependencies": {
+    "typescript": "^4.9.3",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
+  },
+  "dependencies": {
   }
 }

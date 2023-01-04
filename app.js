@@ -35683,7 +35683,7 @@ var import_client = __toESM(require_client());
 // src/UIReact/CanvasReact.tsx
 var import_react = __toESM(require_react());
 
-// src/CanvasWrappers/CanvasWrapper.ts
+// src/Core/CanvasWrappers/CanvasWrapper.ts
 var CanvasWrapper = class {
   constructor(canvas, width, height, ctxId) {
     this._isDirty = true;
@@ -35727,7 +35727,7 @@ var CanvasWrapper = class {
   }
 };
 
-// src/CanvasWrappers/OffScreenCanvasWrapper.ts
+// src/Core/CanvasWrappers/OffScreenCanvasWrapper.ts
 var OffScreenCanvasWrapper = class extends CanvasWrapper {
   constructor(width, height, ctxId) {
     super(new OffscreenCanvas(width, height), width, height, ctxId);
@@ -35736,7 +35736,7 @@ var OffScreenCanvasWrapper = class extends CanvasWrapper {
   }
 };
 
-// src/CanvasWrappers/OffScreenCanvasWrapper2D.ts
+// src/Core/CanvasWrappers/OffScreenCanvasWrapper2D.ts
 var OffScreenCanvasWrapper2D = class extends OffScreenCanvasWrapper {
   constructor(width, height) {
     super(width, height, "2d");
@@ -35769,7 +35769,7 @@ var OffScreenCanvasWrapper2D = class extends OffScreenCanvasWrapper {
   }
 };
 
-// src/Layers/JPLayer.ts
+// src/Core/Layers/JPLayer.ts
 var JPLayer = class extends OffScreenCanvasWrapper {
   constructor(width, height, name = "New Layer", ctxId) {
     super(width, height, ctxId);
@@ -35780,7 +35780,7 @@ var JPLayer = class extends OffScreenCanvasWrapper {
   }
 };
 
-// src/Layers/JPLayer2D.ts
+// src/Core/Layers/JPLayer2D.ts
 var JPLayer2D = class extends JPLayer {
   constructor(width, height, name = "New Layer") {
     super(width, height, name, "2d");
@@ -35832,7 +35832,7 @@ var JPLayer2D = class extends JPLayer {
   }
 };
 
-// src/Global/NullLayer.ts
+// src/Core/Global/NullLayer.ts
 var _NullLayer = class extends JPLayer2D {
   static getInstance() {
     if (!_NullLayer.instance) {
@@ -35849,7 +35849,7 @@ var NullLayer = _NullLayer;
 NullLayer.instance = null;
 var nullLayer = NullLayer.getInstance();
 
-// src/Events/EventHandler.ts
+// src/Core/Events/EventHandler.ts
 var EventHandler = class {
   constructor() {
     this.events = {};
@@ -35882,12 +35882,12 @@ var EventHandler = class {
   }
 };
 
-// src/Global/JPGlobalEvent.ts
+// src/Core/Global/JPGlobalEvent.ts
 var JPGlobalEvent = class extends EventHandler {
 };
 var globalEvent = new JPGlobalEvent();
 
-// src/Documents/JustPaintDocument.ts
+// src/Core/Documents/JustPaintDocument.ts
 var JustPaintDocument = class extends OffScreenCanvasWrapper2D {
   constructor(size, layers = [], name) {
     super(size[0], size[1]);
@@ -35991,7 +35991,7 @@ var JustPaintDocument = class extends OffScreenCanvasWrapper2D {
   }
 };
 
-// src/MathUtils/Vec2.ts
+// src/Core/MathUtils/Vec2.ts
 var Vec2 = class {
   constructor(val1, val2 = void 0) {
     this.x = val1;
@@ -36041,7 +36041,7 @@ var Vec2 = class {
   }
 };
 
-// src/Events/PointerEventHandler.ts
+// src/Core/Events/PointerEventHandler.ts
 var PointerPoint = class {
   constructor(pos, pressure) {
     this.pos = pos;
@@ -36118,7 +36118,7 @@ var PointerEventHandler = class extends EventHandler {
   }
 };
 
-// src/Events/PaintToolEventHandler.ts
+// src/Core/Events/PaintToolEventHandler.ts
 var PaintToolEventHandler = class extends PointerEventHandler {
   constructor() {
     super();
@@ -36154,7 +36154,7 @@ var PaintToolEventHandler = class extends PointerEventHandler {
   }
 };
 
-// src/Events/ViewerEventsHandler.ts
+// src/Core/Events/ViewerEventsHandler.ts
 var ViewerEventsHandler = class extends EventHandler {
   constructor(viewer) {
     super();
@@ -36211,7 +36211,7 @@ var ViewerEventsHandler = class extends EventHandler {
   }
 };
 
-// src/Layers/BackgroundLayer.ts
+// src/Core/Layers/BackgroundLayer.ts
 var BackgroundLayer = class extends JPLayer2D {
   constructor(width, height, fillStyle = "checkerboard") {
     super(width, height, "Background");
@@ -36259,7 +36259,7 @@ var BackgroundLayer = class extends JPLayer2D {
   }
 };
 
-// src/CanvasWrappers/HTMLCanvasWrapper.ts
+// src/Core/CanvasWrappers/HTMLCanvasWrapper.ts
 var HTMLCanvasWrapper = class extends CanvasWrapper {
   constructor(canvas = null, ctxId) {
     if (canvas === null) {
@@ -36278,7 +36278,7 @@ var HTMLCanvasWrapper = class extends CanvasWrapper {
   }
 };
 
-// src/CanvasWrappers/HTMLCanvasWrapper2D.ts
+// src/Core/CanvasWrappers/HTMLCanvasWrapper2D.ts
 var HTMLCanvasWrapper2D = class extends HTMLCanvasWrapper {
   constructor(canvas = null) {
     super(canvas, "2d");
@@ -36311,7 +36311,7 @@ var HTMLCanvasWrapper2D = class extends HTMLCanvasWrapper {
   }
 };
 
-// src/MathUtils/SmoothNumber.ts
+// src/Core/MathUtils/SmoothNumber.ts
 var SmoothNumber = class {
   constructor(value, target, speed) {
     this._value = value;
@@ -36345,7 +36345,7 @@ var SmoothNumber = class {
   }
 };
 
-// src/UI/DocCanvasViewer.ts
+// src/Core/UI/DocCanvasViewer.ts
 var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
   constructor(canvas) {
     super(canvas);
@@ -36624,7 +36624,7 @@ var ViewerState = class {
   }
 };
 
-// src/UI/NullCanvasViewer.ts
+// src/Core/UI/NullCanvasViewer.ts
 var _NullCanvasViewer = class extends DocCanvasViewer {
   constructor() {
     let canvas = document.createElement("canvas");
@@ -36640,7 +36640,7 @@ var _NullCanvasViewer = class extends DocCanvasViewer {
 var NullCanvasViewer = _NullCanvasViewer;
 NullCanvasViewer._instance = null;
 
-// src/Global/NullDoc.ts
+// src/Core/Global/NullDoc.ts
 var NullDoc = class extends JustPaintDocument {
   static get instance() {
     if (NullDoc._instance === null) {
@@ -36650,7 +36650,7 @@ var NullDoc = class extends JustPaintDocument {
   }
 };
 
-// src/Global/JPGlobalVar.ts
+// src/Core/Global/JPGlobalVar.ts
 var _JPGlobalVar = class {
   constructor() {
     this._currDoc = null;
@@ -36768,7 +36768,7 @@ var JPGlobalVar = _JPGlobalVar;
 JPGlobalVar._instance = null;
 var globalVar = JPGlobalVar.instance;
 
-// src/PaintTools/PaintTool.ts
+// src/Core/PaintTools/PaintTool.ts
 var PaintTool = class {
   constructor(eventHandler = null, name = null) {
     this._eventHandler = null;
@@ -36827,7 +36827,7 @@ var PaintTool = class {
   }
 };
 
-// src/PaintTools/PaintTool2D.ts
+// src/Core/PaintTools/PaintTool2D.ts
 var PaintTool2D = class extends PaintTool {
   constructor() {
     super(...arguments);
@@ -36924,7 +36924,7 @@ var PaintTool2D = class extends PaintTool {
   }
 };
 
-// src/PaintTools/BasicPen.ts
+// src/Core/PaintTools/BasicPen.ts
 console.log("BasicPen.ts");
 var BasicPen = class extends PaintTool2D {
   constructor() {
@@ -36988,7 +36988,7 @@ var BasicPen = class extends PaintTool2D {
   }
 };
 
-// src/Utils/DocExporter.ts
+// src/Core/Utils/DocExporter.ts
 var psd = __toESM(require_dist());
 var DocExporter = class {
   static exportPNG(doc) {
@@ -37050,7 +37050,7 @@ var DocExporter = class {
   }
 };
 
-// src/Utils/Utils.ts
+// src/Core/Utils/Utils.ts
 function downloadUrl(url, fileName) {
   const a = document.createElement("a");
   a.href = url;
@@ -37072,7 +37072,7 @@ function setUnscrollable(element) {
   element.style.overflow = "hidden";
 }
 
-// src/Global/Preference.ts
+// src/Core/Global/Preference.ts
 var Preference = class {
   static get instance() {
     if (this._instance === null) {
@@ -37094,7 +37094,7 @@ var Preference = class {
   }
 };
 
-// src/PaintTools/PaintBucket.ts
+// src/Core/PaintTools/PaintBucket.ts
 var PaintBucket = class extends PaintTool2D {
   constructor() {
     super();
@@ -37127,7 +37127,7 @@ var PaintBucket = class extends PaintTool2D {
   }
 };
 
-// src/UI/ShortcutManager.ts
+// src/Core/UI/ShortcutManager.ts
 var ShortcutManager = class {
   constructor() {
     this.shortcuts = [];

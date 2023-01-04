@@ -36369,13 +36369,14 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
   }
   viewDoc(doc) {
     this._state = new ViewerState();
-    let offset = new Vec2(0, 0);
-    let scale = 3;
-    offset.x = this.width / 2 - doc.width / 2 * scale;
-    offset.y = this.height / 2 - doc.height / 2 * scale;
-    this.state.docOffset = offset;
+    let scale = 0.4;
+    console.log(this.width, this.height);
+    this.state.docOffset = new Vec2(
+      (this.width - doc.width * scale) / 2,
+      (this.height - doc.height * scale) / 2
+    );
+    console.log({ docOffset: this.state.docOffset });
     this.state.docScale = scale;
-    this.state._docScaleTarget = scale;
     console.log("setting background");
     this.docBackground = new BackgroundLayer(doc.width, doc.height).setColor1("#ffffff").setColor2("#ffa166");
     this.docWrapper = new JPLayer2D(doc.width, doc.height, "DocWrapper");
@@ -36585,12 +36586,12 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
   renderForeground() {
     if (this.state.docScale > 10) {
       this.drawPixelGrid(
-        "rgba(0, 0, 0, 0.2)",
+        "rgba(125, 125, 125, 0.5)",
         0.5
       );
     }
     this.drawScrollBars(
-      4,
+      10,
       "rgba(255,255,255,0.1)",
       "rgba(0,0,0,0.4)"
     );
@@ -36601,7 +36602,6 @@ var ViewerState = class {
     this._animationSmooth = new SmoothNumber(1, 1, 0.1);
     this._docOffset = new Vec2(0, 0);
     this._docScale = 1;
-    this._docScaleTarget = 1;
     this.zoomSmoothness = 0.1;
   }
   get docOffset() {
@@ -36615,12 +36615,6 @@ var ViewerState = class {
   }
   set docScale(value) {
     this._docScale = value;
-  }
-  get docScaleTarget() {
-    return this._docScaleTarget;
-  }
-  set docScaleTarget(value) {
-    this._docScaleTarget = value;
   }
 };
 
@@ -37270,6 +37264,8 @@ function initCanvas(viewCanvas) {
     throw new Error("viewCanvas is null");
   }
   setUnscrollable(viewCanvas);
+  viewCanvas.width = window.innerWidth;
+  viewCanvas.height = window.innerHeight;
   let width = 3840;
   let height = 2160;
   let layer1 = new JPLayer2D(width, height, "Layer 1");

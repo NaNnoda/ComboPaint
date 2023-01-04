@@ -71,10 +71,13 @@ export function initCanvas(viewCanvas: HTMLCanvasElement) {
     }
     setUnscrollable(viewCanvas);
 
-    // viewCanvas.width = 800;
-    // viewCanvas.height = 600;
+
+
+    viewCanvas.width = window.innerWidth;
+    viewCanvas.height = window.innerHeight;
     let width = 3840;
     let height = 2160;
+
     // let layer0 = new BackgroundLayer(width, height, "checkerboard");
     let layer1 = new JPLayer2D(width, height, "Layer 1");
     let layer2 = new JPLayer2D(width, height, "red");

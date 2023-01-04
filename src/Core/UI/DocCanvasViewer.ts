@@ -48,13 +48,17 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
 
     viewDoc(doc: JustPaintDocument) {
         this._state = new ViewerState();
-        let offset = new Vec2(0, 0);
-        let scale = 3;
-        offset.x = (this.width) / 2 - doc.width / 2 * scale;
-        offset.y = (this.height) / 2 - doc.height / 2 * scale;
-        this.state.docOffset = offset;
+
+        let scale = 0.4;
+        console.log(this.width, this.height);
+        this.state.docOffset = new Vec2(
+            (this.width - doc.width * scale) / 2,
+            (this.height - doc.height * scale) / 2
+        );
+        console.log({docOffset: this.state.docOffset});
+        // (this.width / 2) + (doc.width / 2 * scale),
+        // (this.height / 2) + (doc.height / 2 * scale)
         this.state.docScale = scale;
-        this.state._docScaleTarget = scale;
         console.log("setting background");
         this.docBackground = new BackgroundLayer(doc.width, doc.height)
             .setColor1("#ffffff")
@@ -309,13 +313,13 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
     renderForeground() {
         if (this.state.docScale > 10) {
             this.drawPixelGrid(
-                "rgba(0, 0, 0, 0.2)",
+                "rgba(125, 125, 125, 0.5)",
                 0.5
             );
         }
 
         this.drawScrollBars(
-            4,
+            10,
             "rgba(255,255,255,0.1)",
             "rgba(0,0,0,0.4)"
         );
@@ -339,7 +343,6 @@ class ViewerState {
     }
 
     _docScale: number = 1;
-    _docScaleTarget: number = 1;
 
     get docScale() {
         return this._docScale;
@@ -347,14 +350,6 @@ class ViewerState {
 
     set docScale(value: number) {
         this._docScale = value;
-    }
-
-    get docScaleTarget() {
-        return this._docScaleTarget;
-    }
-
-    set docScaleTarget(value: number) {
-        this._docScaleTarget = value;
     }
 
     zoomSmoothness: number = 0.1;

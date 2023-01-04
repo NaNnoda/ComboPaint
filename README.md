@@ -1,6 +1,6 @@
 # JustPaint
 
-JustPaint is a simple paint program written in JavaScript.
+JustPaint is a simple paint program written in Typescript.
 
 ## Features
 

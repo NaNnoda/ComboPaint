@@ -1,14 +1,14 @@
-import JustPaintDocument from "./Core/Documents/JustPaintDocument";
-import {BasicPen} from "./Core/PaintTools/BasicPen";
-import {DocExporter} from "./Core/Utils/DocExporter";
-import {addToConsole, downloadUrl, setUnscrollable} from "./Core/Utils/Utils";
-import {Preference} from "./Core/Global/Preference";
-import {globalVar, JPGlobalVar} from "./Core/Global/JPGlobalVar";
-import {JPLayer2D} from "./Core/Layers/JPLayer2D";
-import {PaintBucket} from "./Core/PaintTools/PaintBucket";
-import {DropdownManager} from "./Core/UI/DropdownManager";
-import {createShortcut} from "./Core/UI/ShortcutManager";
-import {globalEvent} from "./Core/Global/JPGlobalEvent";
+import JustPaintDocument from "./Documents/JustPaintDocument";
+import {BasicPen} from "./PaintTools/BasicPen";
+import {DocExporter} from "./Utils/DocExporter";
+import {addToConsole, downloadUrl, setUnscrollable} from "./Utils/Utils";
+import {Preference} from "./Global/Preference";
+import {globalVar, JPGlobalVar} from "./Global/JPGlobalVar";
+import {JPLayer2D} from "./Layers/JPLayer2D";
+import {PaintBucket} from "./PaintTools/PaintBucket";
+import {DropdownManager} from "./UI/DropdownManager";
+import {createShortcut} from "./UI/ShortcutManager";
+import {globalEvent} from "./Global/JPGlobalEvent";
 
 function initConsole() {
     addToConsole("GlobalValues", JPGlobalVar);

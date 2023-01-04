@@ -192,7 +192,7 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
         // If scale is smaller than 1, apply blur
         let blueStart = 1;
         if (this.state.docScale < blueStart) {
-            let blur = Math.max((1 / this.state.docScale - 1) / 2, 0);
+            let blur = Math.max((1 / this.state.docScale - 1) / 3, 0);
             // this.docWrapper.ctx.filter = "blur(" + (1 / this.state.docScale - (1 / blueStart)) + "px)";
             this.docWrapper.ctx.filter = "blur(" + blur + "px)";
         } else {

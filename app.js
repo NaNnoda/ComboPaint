@@ -23065,9 +23065,9 @@ var require_trees = __commonJS({
     var d_code = (dist) => {
       return dist < 256 ? _dist_code[dist] : _dist_code[256 + (dist >>> 7)];
     };
-    var put_short = (s, w2) => {
-      s.pending_buf[s.pending++] = w2 & 255;
-      s.pending_buf[s.pending++] = w2 >>> 8 & 255;
+    var put_short = (s, w) => {
+      s.pending_buf[s.pending++] = w & 255;
+      s.pending_buf[s.pending++] = w >>> 8 & 255;
     };
     var send_bits = (s, value, length) => {
       if (s.bi_valid > Buf_size - length) {
@@ -31292,15 +31292,15 @@ var require_psdReader = __commonJS({
         if (pixelDepth !== 8 || pixelDepth2 !== 8) {
           throw new Error("16bit pixel depth not supported for patterns");
         }
-        var w2 = cright - cleft;
+        var w = cright - cleft;
         var h = cbottom - ctop;
         var ox = cleft - left;
         var oy = ctop - top;
         if (compressionMode === 0) {
           if (colorMode === 3 && ch < 3) {
             for (var y_1 = 0; y_1 < h; y_1++) {
-              for (var x_1 = 0; x_1 < w2; x_1++) {
-                var src = x_1 + y_1 * w2;
+              for (var x_1 = 0; x_1 < w; x_1++) {
+                var src = x_1 + y_1 * w;
                 var dst = (ox + x_1 + (y_1 + oy) * width) * 4;
                 data[dst + ch] = cdata[src];
               }
@@ -31308,8 +31308,8 @@ var require_psdReader = __commonJS({
           }
           if (colorMode === 1 && ch < 1) {
             for (var y_2 = 0; y_2 < h; y_2++) {
-              for (var x_2 = 0; x_2 < w2; x_2++) {
-                var src = x_2 + y_2 * w2;
+              for (var x_2 = 0; x_2 < w; x_2++) {
+                var src = x_2 + y_2 * w;
                 var dst = (ox + x_2 + (y_2 + oy) * width) * 4;
                 var value = cdata[src];
                 data[dst + 0] = value;
@@ -35339,17 +35339,17 @@ var require_abr = __commonJS({
                 var y = (0, psdReader_1.readInt32)(reader);
                 var x = (0, psdReader_1.readInt32)(reader);
                 var h = (0, psdReader_1.readInt32)(reader) - y;
-                var w2 = (0, psdReader_1.readInt32)(reader) - x;
-                if (w2 <= 0 || h <= 0)
+                var w = (0, psdReader_1.readInt32)(reader) - x;
+                if (w <= 0 || h <= 0)
                   throw new Error("Invalid bounds");
                 var depth = (0, psdReader_1.readInt16)(reader);
                 var compression = (0, psdReader_1.readUint8)(reader);
-                var alpha = new Uint8Array(w2 * h);
+                var alpha = new Uint8Array(w * h);
                 if (depth === 8) {
                   if (compression === 0) {
                     alpha.set((0, psdReader_1.readBytes)(reader, alpha.byteLength));
                   } else if (compression === 1) {
-                    (0, psdReader_1.readDataRLE)(reader, { width: w2, height: h, data: alpha }, w2, h, 1, [0], false);
+                    (0, psdReader_1.readDataRLE)(reader, { width: w, height: h, data: alpha }, w, h, 1, [0], false);
                   } else {
                     throw new Error("Invalid compression");
                   }
@@ -35366,7 +35366,7 @@ var require_abr = __commonJS({
                 } else {
                   throw new Error("Invalid depth");
                 }
-                samples.push({ id, bounds: { x, y, w: w2, h }, alpha });
+                samples.push({ id, bounds: { x, y, w, h }, alpha });
                 reader.offset = brushEnd;
               }
               break;
@@ -35680,7 +35680,7 @@ var require_dist = __commonJS({
 var import_react2 = __toESM(require_react());
 var import_client = __toESM(require_client());
 
-// src/UIReact/CanvasReact.tsx
+// src/ReactUI/ViewerCanvasComponent.tsx
 var import_react = __toESM(require_react());
 
 // src/Core/CanvasWrappers/CanvasWrapper.ts
@@ -36483,7 +36483,7 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
     this.docWrapper.clear();
     let blueStart = 1;
     if (this.state.docScale < blueStart) {
-      let blur = Math.max((1 / this.state.docScale - 1) / 2, 0);
+      let blur = Math.max((1 / this.state.docScale - 1) / 3, 0);
       this.docWrapper.ctx.filter = "blur(" + blur + "px)";
     } else {
       this.docWrapper.ctx.filter = "none";
@@ -37226,7 +37226,7 @@ function createShortcut(shortcut, execute) {
   shortcutManager.addShortcut(Shortcut.fromString(shortcut, execute));
 }
 
-// src/Initializer.ts
+// src/Core/Initializer.ts
 function initConsole() {
   addToConsole("GlobalValues", JPGlobalVar);
   addToConsole("Preference", Preference);
@@ -37297,8 +37297,8 @@ function initCanvas(viewCanvas) {
   resizeDom();
 }
 
-// src/UIReact/CanvasReact.tsx
-function CanvasReact(props) {
+// src/ReactUI/ViewerCanvasComponent.tsx
+function ViewerCanvasComponent(props) {
   const canvasRef = import_react.default.useRef(null);
   (0, import_react.useEffect)(
     () => {
@@ -37310,21 +37310,13 @@ function CanvasReact(props) {
     },
     []
   );
-  return /* @__PURE__ */ import_react.default.createElement("canvas", { id: "viewCanvas", ref: canvasRef });
+  return /* @__PURE__ */ import_react.default.createElement("canvas", { id: "viewCanvas", ref: canvasRef, property: props });
 }
-var CanvasReact_default = CanvasReact;
+var ViewerCanvasComponent_default = ViewerCanvasComponent;
 
 // src/App.tsx
-var w = window;
-w.__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
-  _renderers: {},
-  supportsFiber: true,
-  inject: () => ({}),
-  onCommitFiberRoot: () => ({}),
-  onCommitFiberUnmount: () => ({})
-};
 function App() {
-  return /* @__PURE__ */ import_react2.default.createElement("div", { id: "app" }, /* @__PURE__ */ import_react2.default.createElement(CanvasReact_default, null));
+  return /* @__PURE__ */ import_react2.default.createElement("div", { id: "app" }, /* @__PURE__ */ import_react2.default.createElement(ViewerCanvasComponent_default, null));
 }
 var rootDom = document.getElementById("root");
 var root = (0, import_client.createRoot)(rootDom);

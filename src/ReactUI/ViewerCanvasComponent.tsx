@@ -1,8 +1,8 @@
 import React, {useEffect} from "react";
 import {FC} from "react";
-import {initCanvas} from "../Initializer";
+import {initCanvas} from "../Core/Initializer";
 
-function CanvasReact(props: any) {
+function ViewerCanvasComponent(props: any) {
     const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
     useEffect(
         () => {
@@ -15,7 +15,7 @@ function CanvasReact(props: any) {
         },
         []
     );
-    return <canvas id="viewCanvas" ref={canvasRef}/>;
+    return <canvas id="viewCanvas" ref={canvasRef} property={props}/>;
 }
 
-export default CanvasReact;
+export default ViewerCanvasComponent;

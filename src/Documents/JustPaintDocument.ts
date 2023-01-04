@@ -1,12 +1,12 @@
 import {JPLayer2D} from "../Layers/JPLayer2D";
 import {OffScreenCanvasWrapper2D} from "../CanvasWrappers/OffScreenCanvasWrapper2D";
 import {nullLayer} from "../Global/NullLayer";
-import {globalEvent} from "../Global/GlobalEvent";
-import {IUndoObject} from "../Interfaces/IUndoObject";
+import {globalEvent} from "../Global/JPGlobalEvent";
+import {IUndoRedoObject} from "../Interfaces/IUndoRedoObject";
 
-export default class JustPaintDocument extends OffScreenCanvasWrapper2D implements IUndoObject {
+export default class JustPaintDocument extends OffScreenCanvasWrapper2D implements IUndoRedoObject {
     layers: JPLayer2D[] = [];
-    history: IUndoObject[] = [];
+    history: IUndoRedoObject[] = [];
     selectedLayer: JPLayer2D = nullLayer;
     name: string;
 
@@ -139,6 +139,10 @@ export default class JustPaintDocument extends OffScreenCanvasWrapper2D implemen
         this.ctx.globalCompositeOperation = layer.blendMode;
         layer.render();
         this.ctx.drawImage(layer.canvas, 0, 0);
+    }
+
+    redo(): void {
+        console.log("Redoing on document " + this.name);
     }
 }
 

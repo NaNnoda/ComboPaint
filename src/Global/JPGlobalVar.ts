@@ -4,7 +4,7 @@ import {PaintTool} from "../PaintTools/PaintTool";
 import {nullLayer} from "./NullLayer";
 import {BasicPen} from "../PaintTools/BasicPen";
 import {JPLayer2D} from "../Layers/JPLayer2D";
-import {globalEvent, GlobalEvent} from "./GlobalEvent";
+import {globalEvent, JPGlobalEvent} from "./JPGlobalEvent";
 import {NullCanvasViewer} from "../UserInterfaceManagers/NullCanvasViewer";
 import {NullDoc} from "./NullDoc";
 
@@ -13,7 +13,7 @@ import {NullDoc} from "./NullDoc";
  * The main class of the JustPaint library.
  * This class is a singleton.
  */
-export class JustPaint {
+export class JPGlobalVar {
     _currDoc: JustPaintDocument | null = null;
     _currTool: PaintTool | null = null;
     _viewer: DocCanvasViewer | null = null;
@@ -22,13 +22,13 @@ export class JustPaint {
     _allDocsSet: Set<JustPaintDocument> = new Set<JustPaintDocument>();
 
     // Singleton
-    static _instance: JustPaint | null = null;
+    static _instance: JPGlobalVar | null = null;
     static get instance() {
-        if (JustPaint._instance === null) {
+        if (JPGlobalVar._instance === null) {
             console.log("Creating new instance of JustPaint");
-            JustPaint._instance = new JustPaint();
+            JPGlobalVar._instance = new JPGlobalVar();
         }
-        return JustPaint._instance;
+        return JPGlobalVar._instance;
     }
 
 
@@ -40,7 +40,7 @@ export class JustPaint {
         return this._currDoc;
     }
 
-    get events(): GlobalEvent {
+    get events(): JPGlobalEvent {
         return globalEvent;
     }
 
@@ -150,4 +150,4 @@ export class JustPaint {
     }
 }
 
-export const justPaint = JustPaint.instance;
+export const globalVar = JPGlobalVar.instance;

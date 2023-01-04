@@ -1,6 +1,6 @@
 import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {PointerPoint} from "../Events/PointerEventHandler";
-import {justPaint} from "../Global/JustPaint";
+import {globalVar} from "../Global/JPGlobalVar";
 // import {justPaint} from "../JustPaint";
 
 export abstract class PaintTool {
@@ -8,15 +8,15 @@ export abstract class PaintTool {
     _eventHandler: PaintToolEventHandler | null = null;
 
     get layer() {
-        if (justPaint.currDoc.selectedLayer === null) {
+        if (globalVar.currDoc.selectedLayer === null) {
             throw new Error("Layer not set");
         }
 
-        return justPaint.currDoc.selectedLayer;
+        return globalVar.currDoc.selectedLayer;
     }
 
     get ctx() {
-        return justPaint.currLayer.ctx;
+        return globalVar.currLayer.ctx;
     }
 
     get eventHandler() {
@@ -40,11 +40,11 @@ export abstract class PaintTool {
     }
 
     get doc() {
-        return justPaint.currDoc;
+        return globalVar.currDoc;
     }
 
     get viewer() {
-        return justPaint.viewer;
+        return globalVar.viewer;
     }
 
      constructor(eventHandler: PaintToolEventHandler | null = null, name: string | null = null) {

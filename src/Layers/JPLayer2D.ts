@@ -1,7 +1,7 @@
 import {JPLayer} from "./JPLayer";
-import {IUndoObject} from "../Interfaces/IUndoObject";
+import {IUndoRedoObject} from "../Interfaces/IUndoRedoObject";
 
-export class JPLayer2D extends JPLayer implements IUndoObject{
+export class JPLayer2D extends JPLayer implements IUndoRedoObject{
     checkpoints: ImageBitmap[] = [];
     needsCheckpoint = false;
 
@@ -12,6 +12,10 @@ export class JPLayer2D extends JPLayer implements IUndoObject{
 
     constructor(width: number, height: number, name: string = "New Layer") {
         super(width, height, name, "2d");
+    }
+
+    redo(): void {
+        throw new Error("Method not implemented.");
     }
 
     get ctx(): OffscreenCanvasRenderingContext2D {

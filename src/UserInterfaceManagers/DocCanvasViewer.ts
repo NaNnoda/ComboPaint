@@ -3,11 +3,10 @@ import {Vec2} from "../MathUtils/Vec2";
 import {PaintToolEventHandler} from "../Events/PaintToolEventHandler";
 import {ViewerEventsHandler} from "../Events/ViewerEventsHandler";
 import {BackgroundLayer} from "../Layers/BackgroundLayer";
-import {justPaint} from "../Global/JustPaint";
-
+import {globalVar} from "../Global/JPGlobalVar";
 import {nullLayer, NullLayer} from "../Global/NullLayer";
 import {HTMLCanvasWrapper2D} from "../CanvasWrappers/HTMLCanvasWrapper2D";
-import {SmoothNumber} from "../SmoothNumber";
+import {SmoothNumber} from "../MathUtils/SmoothNumber";
 import {JPLayer2D} from "../Layers/JPLayer2D";
 import {JPLayer} from "../Layers/JPLayer";
 
@@ -42,7 +41,7 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
     }
 
     initGlobalEvents() {
-        justPaint.events.registerEvent("docCanvasUpdate", () => {
+        globalVar.events.registerEvent("docCanvasUpdate", () => {
             this.update();
         });
     }
@@ -127,7 +126,7 @@ export class DocCanvasViewer extends HTMLCanvasWrapper2D {
     }
 
     get doc() {
-        return justPaint.currDoc;
+        return globalVar.currDoc;
     }
 
     viewToDocCoords(x: number, y: number) {

@@ -1,4 +1,4 @@
-export interface IUndoObject {
+export interface IUndoRedoObject {
     /**
      * Creates a record of the current state.
      */
@@ -13,4 +13,6 @@ export interface IUndoObject {
      * Remove the oldest checkpoint
      */
     removeFirstCheckpoint(): void;
+
+    redo(): void;
 }

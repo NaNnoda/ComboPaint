@@ -12908,6 +12908,9 @@ var JPLayer2D = class extends JPLayer {
   get canvas() {
     return super.canvas;
   }
+  redo() {
+    throw new Error("Method not implemented.");
+  }
   get ctx() {
     return super.ctx;
   }
@@ -12997,10 +13000,10 @@ var EventHandler = class {
   }
 };
 
-// src/Global/GlobalEvent.ts
-var GlobalEvent = class extends EventHandler {
+// src/Global/JPGlobalEvent.ts
+var JPGlobalEvent = class extends EventHandler {
 };
-var globalEvent = new GlobalEvent();
+var globalEvent = new JPGlobalEvent();
 
 // src/Documents/JustPaintDocument.ts
 var JustPaintDocument = class extends OffScreenCanvasWrapper2D {
@@ -13100,6 +13103,9 @@ var JustPaintDocument = class extends OffScreenCanvasWrapper2D {
     this.ctx.globalCompositeOperation = layer.blendMode;
     layer.render();
     this.ctx.drawImage(layer.canvas, 0, 0);
+  }
+  redo() {
+    console.log("Redoing on document " + this.name);
   }
 };
 
@@ -13423,7 +13429,7 @@ var HTMLCanvasWrapper2D = class extends HTMLCanvasWrapper {
   }
 };
 
-// src/SmoothNumber.ts
+// src/MathUtils/SmoothNumber.ts
 var SmoothNumber = class {
   constructor(value, target, speed) {
     this._value = value;
@@ -13475,7 +13481,7 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
     this.initGlobalEvents();
   }
   initGlobalEvents() {
-    justPaint.events.registerEvent("docCanvasUpdate", () => {
+    globalVar.events.registerEvent("docCanvasUpdate", () => {
       this.update();
     });
   }
@@ -13540,7 +13546,7 @@ var DocCanvasViewer = class extends HTMLCanvasWrapper2D {
     return this._state;
   }
   get doc() {
-    return justPaint.currDoc;
+    return globalVar.currDoc;
   }
   viewToDocCoords(x, y) {
     return new Vec2(
@@ -13762,8 +13768,8 @@ var NullDoc = class extends JustPaintDocument {
   }
 };
 
-// src/Global/JustPaint.ts
-var _JustPaint = class {
+// src/Global/JPGlobalVar.ts
+var _JPGlobalVar = class {
   constructor() {
     this._currDoc = null;
     this._currTool = null;
@@ -13772,11 +13778,11 @@ var _JustPaint = class {
     this._allDocsSet = /* @__PURE__ */ new Set();
   }
   static get instance() {
-    if (_JustPaint._instance === null) {
+    if (_JPGlobalVar._instance === null) {
       console.log("Creating new instance of JustPaint");
-      _JustPaint._instance = new _JustPaint();
+      _JPGlobalVar._instance = new _JPGlobalVar();
     }
-    return _JustPaint._instance;
+    return _JPGlobalVar._instance;
   }
   get currDoc() {
     if (this._currDoc === null) {
@@ -13876,9 +13882,9 @@ var _JustPaint = class {
     this.viewer.render();
   }
 };
-var JustPaint = _JustPaint;
-JustPaint._instance = null;
-var justPaint = JustPaint.instance;
+var JPGlobalVar = _JPGlobalVar;
+JPGlobalVar._instance = null;
+var globalVar = JPGlobalVar.instance;
 
 // src/PaintTools/PaintTool.ts
 var PaintTool = class {
@@ -13890,13 +13896,13 @@ var PaintTool = class {
     this.name = name;
   }
   get layer() {
-    if (justPaint.currDoc.selectedLayer === null) {
+    if (globalVar.currDoc.selectedLayer === null) {
       throw new Error("Layer not set");
     }
-    return justPaint.currDoc.selectedLayer;
+    return globalVar.currDoc.selectedLayer;
   }
   get ctx() {
-    return justPaint.currLayer.ctx;
+    return globalVar.currLayer.ctx;
   }
   get eventHandler() {
     if (this._eventHandler === null) {
@@ -13916,10 +13922,10 @@ var PaintTool = class {
     return this.layer.canvas;
   }
   get doc() {
-    return justPaint.currDoc;
+    return globalVar.currDoc;
   }
   get viewer() {
-    return justPaint.viewer;
+    return globalVar.viewer;
   }
   onDown(point) {
     console.debug("Down");
@@ -14340,29 +14346,29 @@ function createShortcut(shortcut, execute) {
 
 // src/Main.ts
 function initConsole() {
-  addToConsole("GlobalValues", JustPaint);
+  addToConsole("GlobalValues", JPGlobalVar);
   addToConsole("Preference", Preference);
   addToConsole("save", {
     get png() {
-      let url = DocExporter.exportPNG(justPaint.currDoc);
-      downloadUrl(url, `${justPaint.currDoc.name}.png`);
-      return `Saved ${justPaint.currDoc.name}.png`;
+      let url = DocExporter.exportPNG(globalVar.currDoc);
+      downloadUrl(url, `${globalVar.currDoc.name}.png`);
+      return `Saved ${globalVar.currDoc.name}.png`;
     },
     get psd() {
-      let url = DocExporter.exportPSD(justPaint.currDoc);
-      let name = justPaint.currDoc.name;
-      downloadUrl(url, `${justPaint.currDoc.name}.psd`);
+      let url = DocExporter.exportPSD(globalVar.currDoc);
+      let name = globalVar.currDoc.name;
+      downloadUrl(url, `${globalVar.currDoc.name}.psd`);
       return `Saved ${name}.psd`;
     }
   });
-  addToConsole("currDoc", justPaint.currDoc);
-  addToConsole("currLayer", justPaint.currLayer);
-  addToConsole("currTool", justPaint.currTool);
+  addToConsole("currDoc", globalVar.currDoc);
+  addToConsole("currLayer", globalVar.currLayer);
+  addToConsole("currTool", globalVar.currTool);
   addToConsole("doc.addLayer", (name) => {
-    justPaint.currDoc.addLayer(new JPLayer2D(justPaint.currDoc.width, justPaint.currDoc.height, name));
+    globalVar.currDoc.addLayer(new JPLayer2D(globalVar.currDoc.width, globalVar.currDoc.height, name));
   });
   addToConsole("ls", () => {
-    for (let doc of justPaint.allDocs) {
+    for (let doc of globalVar.allDocs) {
       console.log(doc.name);
     }
   });
@@ -14378,7 +14384,7 @@ function resizeDom() {
   globalEvent.triggerEvent("docCanvasUpdate");
 }
 function main() {
-  addToConsole("G", JustPaint);
+  addToConsole("G", JPGlobalVar);
   let viewCanvas = document.getElementById("viewCanvas");
   if (viewCanvas === null) {
     throw new Error("viewCanvas is null");
@@ -14391,7 +14397,7 @@ function main() {
   layer2.ctx.fillStyle = "red";
   layer2.ctx.fillRect(0, 0, width / 2, 10);
   layer2.opacity = 0.2;
-  justPaint.init(
+  globalVar.init(
     viewCanvas,
     new JustPaintDocument(
       [width, height],
@@ -14403,7 +14409,7 @@ function main() {
   initConsole();
   createShortcut("ctrl+z", () => {
     console.log("Undo");
-    justPaint.currDoc.undo();
+    globalVar.currDoc.undo();
   });
   window.onresize = (e) => {
     resizeDom();

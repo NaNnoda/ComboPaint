@@ -3,15 +3,15 @@ import {BasicPen} from "./PaintTools/BasicPen";
 import {DocExporter} from "./Utils/DocExporter";
 import {addToConsole, downloadUrl, setUnscrollable} from "./Utils/Utils";
 import {Preference} from "./Global/Preference";
-import {justPaint, JustPaint} from "./Global/JustPaint";
+import {globalVar, JPGlobalVar} from "./Global/JPGlobalVar";
 import {JPLayer2D} from "./Layers/JPLayer2D";
 import {PaintBucket} from "./PaintTools/PaintBucket";
 import {DropdownManager} from "./UserInterfaceManagers/DropdownManager";
 import {createShortcut} from "./UserInterfaceManagers/ShortcutManager";
-import {globalEvent} from "./Global/GlobalEvent";
+import {globalEvent} from "./Global/JPGlobalEvent";
 
 function initConsole() {
-    addToConsole("GlobalValues", JustPaint);
+    addToConsole("GlobalValues", JPGlobalVar);
     addToConsole("Preference", Preference);
     // addToConsole("localStorage",localStorage);
     // addToConsole("save.png", (name: string = GlobalValues.currDoc.name) => {
@@ -24,26 +24,26 @@ function initConsole() {
     // });
     addToConsole("save", {
         get png() {
-            let url = DocExporter.exportPNG(justPaint.currDoc);
-            downloadUrl(url, `${justPaint.currDoc.name}.png`);
-            return `Saved ${justPaint.currDoc.name}.png`;
+            let url = DocExporter.exportPNG(globalVar.currDoc);
+            downloadUrl(url, `${globalVar.currDoc.name}.png`);
+            return `Saved ${globalVar.currDoc.name}.png`;
         },
         get psd() {
-            let url = DocExporter.exportPSD(justPaint.currDoc);
-            let name = justPaint.currDoc.name;
-            downloadUrl(url, `${justPaint.currDoc.name}.psd`);
+            let url = DocExporter.exportPSD(globalVar.currDoc);
+            let name = globalVar.currDoc.name;
+            downloadUrl(url, `${globalVar.currDoc.name}.psd`);
             return `Saved ${name}.psd`;
         }
     })
-    addToConsole("currDoc", justPaint.currDoc);
-    addToConsole("currLayer", justPaint.currLayer);
-    addToConsole("currTool", justPaint.currTool);
+    addToConsole("currDoc", globalVar.currDoc);
+    addToConsole("currLayer", globalVar.currLayer);
+    addToConsole("currTool", globalVar.currTool);
     addToConsole("doc.addLayer", (name: string) => {
-        justPaint.currDoc.addLayer(new JPLayer2D(justPaint.currDoc.width, justPaint.currDoc.height, name));
+        globalVar.currDoc.addLayer(new JPLayer2D(globalVar.currDoc.width, globalVar.currDoc.height, name));
     });
 
     addToConsole("ls", () => {
-        for (let doc of justPaint.allDocs) {
+        for (let doc of globalVar.allDocs) {
             console.log(doc.name);
         }
     })
@@ -63,7 +63,7 @@ function resizeDom() {
 }
 
 function main() {
-    addToConsole("G", JustPaint);
+    addToConsole("G", JPGlobalVar);
 
     let viewCanvas = document.getElementById("viewCanvas") as HTMLCanvasElement;
     if (viewCanvas === null) {
@@ -82,7 +82,7 @@ function main() {
     layer2.ctx.fillRect(0, 0, width / 2, 10);
     layer2.opacity = 0.2;
 
-    justPaint.init(
+    globalVar.init(
         viewCanvas,
         new JustPaintDocument(
             [width, height],
@@ -104,7 +104,7 @@ function main() {
 
     createShortcut("ctrl+z", () => {
         console.log("Undo");
-        justPaint.currDoc.undo();
+        globalVar.currDoc.undo();
     });
 
     window.onresize = (e) => {

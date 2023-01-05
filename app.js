@@ -37347,7 +37347,10 @@
   var import_react3 = __toESM(require_react());
 
   // src/ReactUI/ColorPicker/Shaders/GradientShader.frag
-  var GradientShader_default = "precision mediump float;\r\n\r\nuniform sampler2D textureSampler;\r\nuniform vec2 resolution;\r\n\r\n\r\nout outColor;\r\n\r\nexport void main() {\r\n    // Look up a color from the texture.\r\n    //    outColor = texture2D(textureSampler, resolution);\r\n    outColor = vec4(1, 0, 0.5, 1);\r\n}\r\n";
+  var GradientShader_default = "#version 300 es\r\nprecision mediump float;\r\n\r\nuniform sampler2D textureSampler;\r\nuniform vec2 resolution;\r\n\r\n\r\nout vec4 outColor;\r\n\r\nvoid main() {\r\n    // Look up a color from the texture.\r\n    //    outColor = texture2D(textureSampler, resolution);\r\n    outColor = vec4(1, 0, 0.5, 1);\r\n}\r\n";
+
+  // src/ReactUI/ColorPicker/Shaders/GradientShader.vert
+  var GradientShader_default2 = "// an attribute will receive data from a buffer\r\nattribute vec4 a_position;\r\n\r\n// all shaders have a main function\r\nvoid main() {\r\n\r\n    // gl_Position is a special variable a vertex shader\r\n    // is responsible for setting\r\n    gl_Position = a_position;\r\n}\r\n";
 
   // src/ReactUI/ColorPicker/ColorPicker.tsx
   function ColorPickerCanvas(props) {
@@ -37398,9 +37401,65 @@
   }
   function createGradientImage(width, height, hue) {
     let canvas = new OffscreenCanvas(width, height);
-    let ctx = canvas.getContext("webgl2");
+    let gl = canvas.getContext("webgl2");
     let baseTexture = canvas.transferToImageBitmap();
-    console.log(GradientShader_default);
+    function createShader(gl2, type, source) {
+      let shader = gl2.createShader(type);
+      if (!shader) {
+        console.log("createShader: shader is null");
+        throw new Error("createShader: shader is null");
+      }
+      gl2.shaderSource(shader, source);
+      gl2.compileShader(shader);
+      let success = gl2.getShaderParameter(shader, gl2.COMPILE_STATUS);
+      if (success) {
+        return shader;
+      }
+      console.log(gl2.getShaderInfoLog(shader));
+      gl2.deleteShader(shader);
+      throw new Error("createShader failed");
+    }
+    function createProgram(gl2, vertexShader2, fragmentShader2) {
+      let program2 = gl2.createProgram();
+      if (!program2) {
+        console.log("createProgram: program is null");
+        return;
+      }
+      gl2.attachShader(program2, vertexShader2);
+      gl2.attachShader(program2, fragmentShader2);
+      gl2.linkProgram(program2);
+      let success = gl2.getProgramParameter(program2, gl2.LINK_STATUS);
+      if (success) {
+        return program2;
+      }
+      console.log(gl2.getProgramInfoLog(program2));
+      gl2.deleteProgram(program2);
+    }
+    let vertexShader = createShader(gl, gl.VERTEX_SHADER, GradientShader_default2);
+    let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, GradientShader_default);
+    let program = createProgram(gl, vertexShader, fragmentShader);
+    if (!program) {
+      console.log("createProgram failed");
+      return;
+    }
+    let positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+    let positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    let positions = [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0
+    ];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(program);
   }
   function drawColorGradient(ctx, x, y, width, height, hue = 0) {
     let gradientSaturation = ctx.createRadialGradient(x + width, y, 0, x + width, y, width);

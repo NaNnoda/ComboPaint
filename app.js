@@ -37389,20 +37389,27 @@ function drawColorRing(ctx, x, y, radius, lineWidth) {
   }
 }
 function drawColorGradient(ctx, x, y, width, height, hue = 0) {
-  let gradient = ctx.createLinearGradient(x, height / 2 + y, width / 2 + x, y);
-  gradient.addColorStop(0, "hsla(" + hue + ", 0%, 50%, 1)");
-  gradient.addColorStop(1, "hsla(" + hue + ", 100%, 50%, 1)");
-  ctx.fillStyle = gradient;
+  let backgroundGradient = ctx.createLinearGradient(x + width, y, width + x, height + y);
+  backgroundGradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+  backgroundGradient.addColorStop(1, "rgba(0, 0, 0, 1)");
+  ctx.fillStyle = backgroundGradient;
   ctx.fillRect(x, y, width, height);
-  let gradient2 = ctx.createLinearGradient(x, y, x, y + height);
-  gradient2.addColorStop(0, "rgba(0,0,0,0)");
-  gradient2.addColorStop(1, "rgba(0,0,0,1)");
-  ctx.fillStyle = gradient2;
+  let gradientWhite = ctx.createRadialGradient(x, y, 0, x, y, width);
+  gradientWhite.addColorStop(0, "rgba(255,255,255,1)");
+  gradientWhite.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = gradientWhite;
   ctx.fillRect(x, y, width, height);
-  let gradient3 = ctx.createLinearGradient(x, y, x + width / 2, y + height / 2);
-  gradient3.addColorStop(0, "rgba(255,255,255,1)");
-  gradient3.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = gradient3;
+  let midX = x + width / 2;
+  let gradientSaturation = ctx.createRadialGradient(x + width, y, 0, x + width, y, width);
+  gradientSaturation.addColorStop(0, "hsla(" + hue + ", 100%, 50%, 1)");
+  gradientSaturation.addColorStop(1, "hsla(" + hue + ", 100%, 50%, 0)");
+  ctx.fillStyle = gradientSaturation;
+  ctx.fillRect(x, y, width, height);
+  let gradientBlack = ctx.createRadialGradient(midX, y + height, 0, midX, y + height, width);
+  gradientBlack.addColorStop(0, "rgba(0,0,0,1)");
+  gradientBlack.addColorStop(0.2, "rgba(0,0,0,0.3)");
+  gradientBlack.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = gradientBlack;
   ctx.fillRect(x, y, width, height);
 }
 function ColorPicker(props) {

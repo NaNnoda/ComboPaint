@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "watch": "esbuild src/Main.ts --bundle --sourcemap --outfile=index.js --watch --format=esm",
-    "react": "esbuild src/App.tsx --bundle --sourcemap --outfile=app.js --watch --format=esm"
+    "react": "esbuild src/Main.ts --bundle --sourcemap --outfile=app.js --watch --format=esm"
   },
   "repository": {
     "type": "git",

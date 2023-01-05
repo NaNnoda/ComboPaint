@@ -191,11 +191,23 @@ function ColorPicker(props: ColorPickerProps) {
                            globalEvent.changeMainColor(e.target.value);
                        }
                    }
-                   style={{
-                       position: "absolute",
-                       left: `${props.padding}px`,
-                       top: `${props.size}px`,
-                   }}/>
+                   style={
+                       {
+                           position: "absolute",
+                           left: `${props.padding}px`,
+                           top: `${props.size}px`,
+                           display: "block",
+                           width: `32px`,
+                           height: `32px`,
+                           overflow: "hidden",
+                           // margin: `190px`,
+                           border: "#bdbdbd" + " 2px solid",
+                           backgroundColor: "#eaeaea",
+                           cursor: "pointer",
+                       }
+                   }
+
+            />
         </div>
     );
 }

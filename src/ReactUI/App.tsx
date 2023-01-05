@@ -42,7 +42,7 @@ function App() {
             <ViewerCanvasComponent/>
             {
                 contextMenuVisible &&
-                <CanvasViewerContextMenu x={x} y={y} closeMenu={closeContextMenu}></CanvasViewerContextMenu>
+                <CanvasViewerContextMenu x={x} y={y}></CanvasViewerContextMenu>
             }
         </div>
     );

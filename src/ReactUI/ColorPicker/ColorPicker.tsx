@@ -1,6 +1,7 @@
 import React, {useEffect} from "react";
 import {useState} from "react";
-import {globalEvent} from "../Core/Global/JPGlobalEvent";
+import {globalEvent} from "../../Core/Global/JPGlobalEvent";
+import fragmentShader from "./Shaders/GradientShader.frag";
 
 interface ColorPickerProps {
     size: number;
@@ -35,6 +36,8 @@ function ColorPickerCanvas(props: ColorPickerProps) {
         console.log("ColorPickerCanvas useEffect end");
     }, []);
 
+    createGradientImage(100, 100, 0);
+
     return (
         <canvas
             width={canvasSize}
@@ -61,6 +64,17 @@ function drawColorRing(ctx: CanvasRenderingContext2D, x: number, y: number, radi
     }
 }
 
+function createGradientImage(width: number, height: number, hue: number) {
+    let canvas = new OffscreenCanvas(width, height);
+    let ctx = canvas.getContext("webgl2");
+    let baseTexture = canvas.transferToImageBitmap();
+
+    console.log(fragmentShader);
+
+
+
+}
+
 function drawColorGradient(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, hue: number = 0) {
 
     //
@@ -78,15 +92,12 @@ function drawColorGradient(ctx: CanvasRenderingContext2D, x: number, y: number, 
     // ctx.fillRect(x, y, width, height);
 
 
-    let backgroundGradient = ctx.createLinearGradient(x + width, y, width + x, height + y);
-    backgroundGradient.addColorStop(0, "rgba(255, 255, 255, 1)");
-    backgroundGradient.addColorStop(1, "rgba(0, 0, 0, 1)");
-    ctx.fillStyle = backgroundGradient;
+    let gradientSaturation = ctx.createRadialGradient(x + width, y, 0, x + width, y, width);
+    gradientSaturation.addColorStop(0, "hsla(" + hue + ", 100%, 50%, 1)");
+    gradientSaturation.addColorStop(1, "hsla(" + hue + ", 100%, 50%, 1)");
+    // ctx.globalCompositeOperation = "multiply";
+    ctx.fillStyle = gradientSaturation;
     ctx.fillRect(x, y, width, height);
-
-
-
-
     let gradientWhite = ctx.createRadialGradient(x, y, 0, x, y, width);
     gradientWhite.addColorStop(0, "rgba(255,255,255,1)");
     gradientWhite.addColorStop(1, "rgba(255,255,255,0)");
@@ -94,21 +105,18 @@ function drawColorGradient(ctx: CanvasRenderingContext2D, x: number, y: number, 
     ctx.fillStyle = gradientWhite;
     ctx.fillRect(x, y, width, height);
     let midX = x + width / 2;
-
-    let gradientSaturation = ctx.createRadialGradient(x + width, y, 0, x + width, y, width);
-    gradientSaturation.addColorStop(0, "hsla(" + hue + ", 100%, 50%, 1)");
-    gradientSaturation.addColorStop(1, "hsla(" + hue + ", 100%, 50%, 0)");
-    // ctx.globalCompositeOperation = "multiply";
-    ctx.fillStyle = gradientSaturation;
+    let backgroundGradient = ctx.createLinearGradient(x + width, y, width + x, height + y);
+    backgroundGradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+    backgroundGradient.addColorStop(1, "rgba(0, 0, 0, 1)");
+    ctx.fillStyle = backgroundGradient;
     ctx.fillRect(x, y, width, height);
-
     let gradientBlack = ctx.createRadialGradient(midX, y + height, 0, midX, y + height, width);
     gradientBlack.addColorStop(0, "rgba(0,0,0,1)");
-    gradientBlack.addColorStop(0.2, "rgba(0,0,0,0.3)");
+    // gradientBlack.addColorStop(0.2, "rgba(0,0,0,0.3)");
     gradientBlack.addColorStop(1, "rgba(0,0,0,0)");
     // ctx.globalCompositeOperation = "darken";
     ctx.fillStyle = gradientBlack;
-    ctx.fillRect(x, y, width, height);
+    // ctx.fillRect(x, y, width, height);
 }
 
 function ColorPicker(props: ColorPickerProps) {

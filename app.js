@@ -37347,10 +37347,10 @@
   var import_react3 = __toESM(require_react());
 
   // src/ReactUI/ColorPicker/Shaders/GradientShader.frag
-  var GradientShader_default = "#version 300 es\r\nprecision mediump float;\r\n\r\nuniform sampler2D textureSampler;\r\nuniform vec2 resolution;\r\n\r\n\r\nout vec4 outColor;\r\n\r\nvoid main() {\r\n    // Look up a color from the texture.\r\n    //    outColor = texture2D(textureSampler, resolution);\r\n    outColor = vec4(1, 0, 0.5, 1);\r\n}\r\n";
+  var GradientShader_default = "#version 300 es\nprecision mediump float;\n\nuniform sampler2D textureSampler;\nuniform vec2 resolution;\n\n\nout vec4 outColor;\n\nvoid main() {\n    // Look up a color from the texture.\n    //    outColor = texture2D(textureSampler, resolution);\n    outColor = vec4(1, 0, 0.5, 1);\n}\n";
 
   // src/ReactUI/ColorPicker/Shaders/GradientShader.vert
-  var GradientShader_default2 = "// an attribute will receive data from a buffer\r\nattribute vec4 a_position;\r\n\r\n// all shaders have a main function\r\nvoid main() {\r\n\r\n    // gl_Position is a special variable a vertex shader\r\n    // is responsible for setting\r\n    gl_Position = a_position;\r\n}\r\n";
+  var GradientShader_default2 = "// an attribute will receive data from a buffer\nattribute vec4 a_position;\n\n// all shaders have a main function\nvoid main() {\n\n    // gl_Position is a special variable a vertex shader\n    // is responsible for setting\n    gl_Position = a_position;\n}\n";
 
   // src/ReactUI/ColorPicker/ColorPicker.tsx
   function ColorPickerCanvas(props) {

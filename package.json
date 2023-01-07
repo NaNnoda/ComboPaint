@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "imagetracerjs": "^1.2.6",
+    "opentracing": "^0.14.7",
     "ts-node": "^10.9.1"
   }
 }

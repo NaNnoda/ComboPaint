@@ -53,6 +53,7 @@ export function createApp(element: HTMLElement) {
     root.render(
         <React.StrictMode>
             <App/>
+            {/*<input type={"file"} />*/}
         </React.StrictMode>
     );
 

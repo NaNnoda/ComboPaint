@@ -33,7 +33,7 @@ function CanvasViewerContextMenu(props: ICanvasViewerContextMenuProps) {
                 reactEvent.triggerEvent("closeContextMenu")
             }}>Close
             </button>
-            <ColorPicker size={300} padding={20}/>
+            <ColorPicker size={250} padding={20}/>
         </div>
     );
 }

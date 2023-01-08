@@ -1001,7 +1001,7 @@
             }
             return dispatcher.useContext(Context);
           }
-          function useState2(initialState) {
+          function useState(initialState) {
             var dispatcher = resolveDispatcher();
             return dispatcher.useState(initialState);
           }
@@ -1801,7 +1801,7 @@
           exports.useMemo = useMemo;
           exports.useReducer = useReducer;
           exports.useRef = useRef;
-          exports.useState = useState2;
+          exports.useState = useState;
           exports.useSyncExternalStore = useSyncExternalStore;
           exports.useTransition = useTransition;
           exports.version = ReactVersion;
@@ -35679,7 +35679,7 @@
   });
 
   // src/ReactUI/App.tsx
-  var import_react5 = __toESM(require_react());
+  var import_react4 = __toESM(require_react());
   var import_client = __toESM(require_client());
 
   // src/ReactUI/ViewerCanvasComponent.tsx
@@ -35887,7 +35887,13 @@
   // src/Core/Global/JPGlobalEvent.ts
   var JPGlobalEvent = class extends EventHandler {
     changeMainColor(color) {
+      if (!color.startsWith("#")) {
+        throw new Error("Color must start with #");
+      }
       this.triggerEvent("mainColorChange", color);
+    }
+    addChangeMainColorListener(listener) {
+      this.registerEvent("mainColorChange", listener);
     }
   };
   var globalEvent = new JPGlobalEvent();
@@ -36650,20 +36656,14 @@
   };
 
   // src/Core/Global/JPGlobalVar.ts
-  var _JPGlobalVar = class {
+  var JPGlobalVar = class {
     constructor() {
       this._currDoc = null;
       this._currTool = null;
       this._viewer = null;
       this._allDocs = [];
       this._allDocsSet = /* @__PURE__ */ new Set();
-    }
-    static get instance() {
-      if (_JPGlobalVar._instance === null) {
-        console.log("Creating new instance of JustPaint");
-        _JPGlobalVar._instance = new _JPGlobalVar();
-      }
-      return _JPGlobalVar._instance;
+      this.mainColor = "#000000";
     }
     get currDoc() {
       if (this._currDoc === null) {
@@ -36761,11 +36761,13 @@
       this.currTool = tool;
       this.currDoc.render();
       this.viewer.render();
+      globalEvent.addChangeMainColorListener((color) => {
+        this.mainColor = color;
+        console.log("Main color changed to " + color);
+      });
     }
   };
-  var JPGlobalVar = _JPGlobalVar;
-  JPGlobalVar._instance = null;
-  var globalVar = JPGlobalVar.instance;
+  var globalVar = new JPGlobalVar();
 
   // src/Core/PaintTools/PaintTool.ts
   var PaintTool = class {
@@ -37340,42 +37342,235 @@
   var ViewerCanvasComponent_default = ViewerCanvasComponent;
 
   // src/ReactUI/CanvasViewerContextMenu.tsx
-  var import_react4 = __toESM(require_react());
+  var import_react3 = __toESM(require_react());
 
   // src/ReactUI/ColorPicker/ColorPicker.tsx
   var import_react2 = __toESM(require_react());
-  var import_react3 = __toESM(require_react());
 
-  // src/ReactUI/ColorPicker/Shaders/GradientShader.frag
-  var GradientShader_default = "#version 300 es\nprecision mediump float;\n\nuniform sampler2D textureSampler;\nuniform vec2 resolution;\n\n\nout vec4 outColor;\n\nvoid main() {\n    // Look up a color from the texture.\n    //    outColor = texture2D(textureSampler, resolution);\n    outColor = vec4(1, 0, 0.5, 1);\n}\n";
-
-  // src/ReactUI/ColorPicker/Shaders/GradientShader.vert
-  var GradientShader_default2 = "// an attribute will receive data from a buffer\nattribute vec4 a_position;\n\n// all shaders have a main function\nvoid main() {\n\n    // gl_Position is a special variable a vertex shader\n    // is responsible for setting\n    gl_Position = a_position;\n}\n";
+  // src/Core/DataTypes/Color.ts
+  var Color = class {
+    constructor(r, g, b, a = 1) {
+      this._r = r;
+      this._g = g;
+      this._b = b;
+      this._a = a;
+    }
+    static hueToRgb(p, q, t) {
+      if (t < 0) {
+        t += 1;
+      }
+      if (t > 1) {
+        t -= 1;
+      }
+      if (t < 1 / 6) {
+        return p + (q - p) * 6 * t;
+      }
+      if (t < 1 / 2) {
+        return q;
+      }
+      if (t < 2 / 3) {
+        return p + (q - p) * (2 / 3 - t) * 6;
+      }
+      return p;
+    }
+    static hexStrToHSL(str) {
+      let r = parseInt(str[1] + str[2], 16);
+      let g = parseInt(str[3] + str[4], 16);
+      let b = parseInt(str[5] + str[6], 16);
+      r /= 255;
+      g /= 255;
+      b /= 255;
+      let l = Math.max(r, g, b);
+      let s = l - Math.min(r, g, b);
+      let h = 0;
+      if (s != 0) {
+        if (l == r) {
+          h = (g - b) / s;
+        } else if (l == g) {
+          h = 2 + (b - r) / s;
+        } else {
+          h = 4 + (r - g) / s;
+        }
+      }
+      h *= 60;
+      if (h < 0) {
+        h += 360;
+      }
+      s *= 100;
+      l *= 100;
+      return [h, s, l];
+    }
+    static hslToHex(h, s, l, a = 1) {
+      let r;
+      let g;
+      let b;
+      if (s == 0) {
+        r = g = b = l;
+      } else {
+        let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        let p = 2 * l - q;
+        r = Color.hueToRgb(p, q, h + 1 / 3);
+        g = Color.hueToRgb(p, q, h);
+        b = Color.hueToRgb(p, q, h - 1 / 3);
+      }
+      let hexR = Math.round(r * 255).toString(16);
+      let hexG = Math.round(g * 255).toString(16);
+      let hexB = Math.round(b * 255).toString(16);
+      let hexA = Math.round(a * 255).toString(16);
+      return `#${hexR}${hexG}${hexB}${hexA}`;
+    }
+    get red() {
+      return this._r;
+    }
+    set red(value) {
+      this._r = value;
+    }
+    get green() {
+      return this._g;
+    }
+    set green(value) {
+      this._g = value;
+    }
+    get blue() {
+      return this._b;
+    }
+    set blue(value) {
+      this._b = value;
+    }
+    get alpha() {
+      return this._a;
+    }
+    set a(value) {
+      this._a = value;
+    }
+    get hue() {
+      return Math.atan2(Math.sqrt(3) * (this.green - this.blue), 2 * this.red - this.green - this.blue);
+    }
+    get saturation() {
+      return 1 - 3 * Math.min(this.red, this.green, this.blue) / (this.red + this.green + this.blue);
+    }
+    get luminance() {
+      return 0.2126 * this.red + 0.7152 * this.green + 0.0722 * this.blue;
+    }
+    toString() {
+      return `rgba(${this.red}, ${this.green}, ${this.blue}, ${this.a})`;
+    }
+  };
 
   // src/ReactUI/ColorPicker/ColorPicker.tsx
   function ColorPickerCanvas(props) {
     const canvasRef = import_react2.default.useRef(null);
-    const canvasSize = props.size + props.padding * 2;
+    const size = props.size;
+    const padding = props.padding;
+    const outerRing = size - padding * 2;
+    const ringWidth = 20;
+    const innerRing = outerRing - ringWidth * 4;
+    const ringRadius = outerRing / 2 - ringWidth;
+    const gradientSize = Math.sqrt(innerRing * innerRing / 2);
+    const colorRingImage = getColorRingImage(outerRing, outerRing, ringWidth);
+    const canvasSize = props.size - props.padding * 2;
+    const centerX = canvasSize / 2;
+    const centerY = canvasSize / 2;
+    const gradientLeft = centerX - gradientSize / 2;
+    const gradientTop = centerY - gradientSize / 2;
+    const gradientRight = centerX + gradientSize / 2;
+    const gradientBottom = centerY + gradientSize / 2;
+    const [h, s, l] = Color.hexStrToHSL(globalVar.mainColor);
+    let hueDegree = h;
+    let saturation = s;
+    let lightness = l;
+    let dirty = true;
+    function changeMainColor() {
+      let color = Color.hslToHex(hueDegree, saturation, lightness);
+      globalEvent.changeMainColor(color);
+    }
+    function inGradientRange(x, y) {
+      return x >= gradientLeft && x <= gradientRight && y >= gradientTop && y <= gradientBottom;
+    }
+    function inRingRange(x, y) {
+      let distance = Math.sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
+      if (Math.abs(distance - ringRadius) <= ringWidth / 2) {
+        return true;
+      }
+    }
+    function redrawCanvas(canvas, ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawImageInCenter(ctx, canvas, colorRingImage);
+      let gradientImage = getGradientImage(gradientSize, gradientSize, hueDegree);
+      drawImageInCenter(ctx, canvas, gradientImage);
+      drawHueCircle(ctx);
+      drawGradientCircle(ctx);
+    }
+    function drawHueCircle(ctx) {
+      let c = hueDegree + 180 + 45;
+      console.log("hueDegree: " + hueDegree);
+      let x = ringRadius * Math.cos(c * Math.PI / 180);
+      let y = ringRadius * Math.sin(c * Math.PI / 180);
+      let color = `hsl(${hueDegree}, 100%, 50%)`;
+      drawColorCircle(ctx, centerX + x, centerY + y, color);
+    }
+    function drawGradientCircle(ctx) {
+      let relaX = saturation / 100;
+      let relaY = (1 - lightness) / 100 + 0.5 * (1 - relaX) + 0.5;
+      let dx = gradientSize * relaX;
+      let dy = gradientSize * relaY;
+      let x = gradientLeft + dx;
+      let y = gradientTop + dy;
+      console.log({ dx, dy });
+      let color = `hsl(${hueDegree}, ${saturation}%, ${lightness}%)`;
+      console.log(color);
+      drawColorCircle(ctx, x, y, color);
+    }
+    function updateHue(x, y) {
+      let degree = Math.atan2(y - centerY, x - centerX) * 180 / Math.PI;
+      hueDegree = degree - 180 - 45;
+      console.log("updateHue: " + hueDegree);
+    }
+    function updateSaturationAndLightness(x, y) {
+      let dx = x - gradientLeft;
+      let dy = y - gradientTop;
+      let relaX = dx / gradientSize;
+      let relaY = dy / gradientSize;
+      saturation = relaX * 100;
+      lightness = (1 - relaY) * 100 - 50 * relaX;
+      console.log({ saturation, lightness });
+    }
+    function initCanvas2(canvas) {
+      let ctx = canvas.getContext("2d");
+      if (!ctx) {
+        console.log("initCanvas: ctx is null");
+        throw new Error("initCanvas: ctx is null");
+      }
+      redrawCanvas(canvas, ctx);
+      canvas.addEventListener("pointermove", (e) => {
+        let x = e.offsetX;
+        let y = e.offsetY;
+        let pressed = e.pressure > 0;
+        if (inGradientRange(x, y)) {
+          console.log("inGradientRange");
+          if (pressed) {
+            updateSaturationAndLightness(x, y);
+          }
+        }
+        if (inRingRange(x, y)) {
+          console.log("inRingRange");
+          if (pressed) {
+            updateHue(x, y);
+          }
+        }
+        changeMainColor();
+        redrawCanvas(canvas, ctx);
+      });
+    }
     (0, import_react2.useEffect)(() => {
       console.log("ColorPickerCanvas useEffect");
       if (!canvasRef.current) {
         console.log("ColorPickerCanvas useEffect: canvasRef.current is null");
         return;
       }
-      const ctx = canvasRef.current.getContext("2d");
-      if (!ctx) {
-        console.log("ColorPickerCanvas useEffect: ctx is null");
-        return;
-      }
-      let mid = props.size / 2 + +props.padding;
-      let lineWidth = 20;
-      drawColorRing(ctx, mid, mid, canvasSize / 2 - lineWidth, lineWidth);
-      let gradientStart = mid - props.size / 2;
-      let gradientEnd = props.size / 2;
-      drawColorGradient(ctx, 100, 100, 150, 150);
-      console.log("ColorPickerCanvas useEffect end");
+      const canvas = canvasRef.current;
+      initCanvas2(canvas);
     }, []);
-    createGradientImage(100, 100, 0);
     return /* @__PURE__ */ import_react2.default.createElement(
       "canvas",
       {
@@ -37389,107 +37584,88 @@
       }
     );
   }
-  function drawColorRing(ctx, x, y, radius, lineWidth) {
-    ctx.lineWidth = lineWidth;
+  function drawImageInCenter(ctx, canvas, image) {
+    let height = canvas.height;
+    let width = canvas.width;
+    let x = (width - image.width) / 2;
+    let y = (height - image.height) / 2;
+    ctx.drawImage(image, x, y);
+  }
+  function drawColorCircle(ctx, x, y, color, radius = 8) {
+    ctx.save();
     ctx.imageSmoothingEnabled = true;
+    ctx.filter = "drop-shadow(0 0 1px #000000)";
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.stroke();
+    ctx.filter = "none";
+    ctx.beginPath();
+    ctx.arc(x, y, radius - 3, 0, 2 * Math.PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+  function getColorRingImage(width, height, lineWidth, drawOutline = true) {
+    let canvas = new OffscreenCanvas(width, height);
+    let ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.log("getColorRingImage: ctx is null");
+      throw new Error("getColorRingImage: ctx is null");
+    }
+    ctx.lineWidth = lineWidth;
+    ctx.filter = "blur(1px)";
     for (let i = 0; i < 360; i++) {
       ctx.beginPath();
-      ctx.arc(x, y, radius, i * Math.PI / 180, (i + 1) * Math.PI / 180);
+      let c = i + 180 + 45;
+      ctx.arc(width / 2, height / 2, width / 2 - lineWidth, c * Math.PI / 180, (c + 1) * Math.PI / 180);
       ctx.strokeStyle = "hsl(" + i + ", 100%, 50%)";
       ctx.stroke();
     }
+    if (drawOutline) {
+      ctx.filter = "none";
+      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = "#494949";
+      ctx.beginPath();
+      ctx.arc(width / 2, height / 2, width / 2 - lineWidth / 2, 0, 2 * Math.PI);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(width / 2, height / 2, width / 2 - lineWidth * 1.5, 0, 2 * Math.PI);
+      ctx.stroke();
+    }
+    return canvas.transferToImageBitmap();
   }
-  function createGradientImage(width, height, hue) {
+  function getGradientImage(width = 100, height = 100, hueDegree = 0, drawOutline = true) {
     let canvas = new OffscreenCanvas(width, height);
-    let gl = canvas.getContext("webgl2");
-    let baseTexture = canvas.transferToImageBitmap();
-    function createShader(gl2, type, source) {
-      let shader = gl2.createShader(type);
-      if (!shader) {
-        console.log("createShader: shader is null");
-        throw new Error("createShader: shader is null");
-      }
-      gl2.shaderSource(shader, source);
-      gl2.compileShader(shader);
-      let success = gl2.getShaderParameter(shader, gl2.COMPILE_STATUS);
-      if (success) {
-        return shader;
-      }
-      console.log(gl2.getShaderInfoLog(shader));
-      gl2.deleteShader(shader);
-      throw new Error("createShader failed");
+    let ctx = canvas.getContext("2d");
+    if (!ctx) {
+      console.log("getRedGradient: ctx is null");
+      throw new Error("getRedGradient: ctx is null");
     }
-    function createProgram(gl2, vertexShader2, fragmentShader2) {
-      let program2 = gl2.createProgram();
-      if (!program2) {
-        console.log("createProgram: program is null");
-        return;
-      }
-      gl2.attachShader(program2, vertexShader2);
-      gl2.attachShader(program2, fragmentShader2);
-      gl2.linkProgram(program2);
-      let success = gl2.getProgramParameter(program2, gl2.LINK_STATUS);
-      if (success) {
-        return program2;
-      }
-      console.log(gl2.getProgramInfoLog(program2));
-      gl2.deleteProgram(program2);
+    for (let y = 0; y < height; y++) {
+      let gradient = ctx.createLinearGradient(0, 0, width, 0);
+      let h = hueDegree;
+      let l = 100 - y / height * 100;
+      gradient.addColorStop(0, `hsl(${h}, 0%, ${l}%)`);
+      gradient.addColorStop(1, `hsl(${h}, 100%, ${l / 2}%)`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, y, width, y + 1);
     }
-    let vertexShader = createShader(gl, gl.VERTEX_SHADER, GradientShader_default2);
-    let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, GradientShader_default);
-    let program = createProgram(gl, vertexShader, fragmentShader);
-    if (!program) {
-      console.log("createProgram failed");
-      return;
+    if (drawOutline) {
+      ctx.strokeStyle = "#494949";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.rect(0, 0, width, height);
+      ctx.stroke();
     }
-    let positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-    let positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    let positions = [
-      0,
-      0,
-      0,
-      1,
-      1,
-      1,
-      1,
-      0
-    ];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.useProgram(program);
-  }
-  function drawColorGradient(ctx, x, y, width, height, hue = 0) {
-    let gradientSaturation = ctx.createRadialGradient(x + width, y, 0, x + width, y, width);
-    gradientSaturation.addColorStop(0, "hsla(" + hue + ", 100%, 50%, 1)");
-    gradientSaturation.addColorStop(1, "hsla(" + hue + ", 100%, 50%, 1)");
-    ctx.fillStyle = gradientSaturation;
-    ctx.fillRect(x, y, width, height);
-    let gradientWhite = ctx.createRadialGradient(x, y, 0, x, y, width);
-    gradientWhite.addColorStop(0, "rgba(255,255,255,1)");
-    gradientWhite.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = gradientWhite;
-    ctx.fillRect(x, y, width, height);
-    let midX = x + width / 2;
-    let backgroundGradient = ctx.createLinearGradient(x + width, y, width + x, height + y);
-    backgroundGradient.addColorStop(0, "rgba(0, 0, 0, 0)");
-    backgroundGradient.addColorStop(1, "rgba(0, 0, 0, 1)");
-    ctx.fillStyle = backgroundGradient;
-    ctx.fillRect(x, y, width, height);
-    let gradientBlack = ctx.createRadialGradient(midX, y + height, 0, midX, y + height, width);
-    gradientBlack.addColorStop(0, "rgba(0,0,0,1)");
-    gradientBlack.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = gradientBlack;
+    return canvas.transferToImageBitmap();
   }
   function ColorPicker(props) {
-    const [color, setColor] = (0, import_react3.useState)("#000000");
     return /* @__PURE__ */ import_react2.default.createElement("div", { style: { display: "flex", position: "relative" } }, /* @__PURE__ */ import_react2.default.createElement(ColorPickerCanvas, { padding: props.padding, size: props.size }), /* @__PURE__ */ import_react2.default.createElement(
       "input",
       {
         type: "color",
-        value: color,
         onChange: (e) => {
           globalEvent.changeMainColor(e.target.value);
         },
@@ -37512,7 +37688,7 @@
 
   // src/ReactUI/CanvasViewerContextMenu.tsx
   function CanvasViewerContextMenu(props) {
-    return /* @__PURE__ */ import_react4.default.createElement(
+    return /* @__PURE__ */ import_react3.default.createElement(
       "div",
       {
         className: "context-menu",
@@ -37530,20 +37706,20 @@
           e.stopPropagation();
         }
       },
-      /* @__PURE__ */ import_react4.default.createElement("h1", null, "Context Menu"),
-      /* @__PURE__ */ import_react4.default.createElement("button", { onClick: () => {
+      /* @__PURE__ */ import_react3.default.createElement("h1", null, "Context Menu"),
+      /* @__PURE__ */ import_react3.default.createElement("button", { onClick: () => {
         reactEvent.triggerEvent("closeContextMenu");
       } }, "Close"),
-      /* @__PURE__ */ import_react4.default.createElement(ColorPicker_default, { size: 300, padding: 20 })
+      /* @__PURE__ */ import_react3.default.createElement(ColorPicker_default, { size: 250, padding: 20 })
     );
   }
   var CanvasViewerContextMenu_default = CanvasViewerContextMenu;
 
   // src/ReactUI/App.tsx
   function App() {
-    const [x, setX] = import_react5.default.useState(0);
-    const [y, setY] = import_react5.default.useState(0);
-    const [contextMenuVisible, setContextMenuVisible] = import_react5.default.useState(false);
+    const [x, setX] = import_react4.default.useState(0);
+    const [y, setY] = import_react4.default.useState(0);
+    const [contextMenuVisible, setContextMenuVisible] = import_react4.default.useState(false);
     function showContextMenu(e) {
       e.preventDefault();
       const { pageX, pageY } = e;
@@ -37556,24 +37732,24 @@
     }
     reactEvent.registerEvent("closeContextMenu", closeContextMenu);
     reactEvent.registerEvent("showContextMenu", showContextMenu);
-    return /* @__PURE__ */ import_react5.default.createElement(
+    return /* @__PURE__ */ import_react4.default.createElement(
       "div",
       {
-        id: "app",
+        id: "justPaintDiv",
         onContextMenu: showContextMenu,
         style: { width: "100%", height: "100%" },
         onClick: (e) => {
           console.log("App clicked");
         }
       },
-      /* @__PURE__ */ import_react5.default.createElement(ViewerCanvasComponent_default, null),
-      contextMenuVisible && /* @__PURE__ */ import_react5.default.createElement(CanvasViewerContextMenu_default, { x, y })
+      /* @__PURE__ */ import_react4.default.createElement(ViewerCanvasComponent_default, null),
+      contextMenuVisible && /* @__PURE__ */ import_react4.default.createElement(CanvasViewerContextMenu_default, { x, y })
     );
   }
   function createApp(element) {
     const root = (0, import_client.createRoot)(element);
     root.render(
-      /* @__PURE__ */ import_react5.default.createElement(import_react5.default.StrictMode, null, /* @__PURE__ */ import_react5.default.createElement(App, null))
+      /* @__PURE__ */ import_react4.default.createElement(import_react4.default.StrictMode, null, /* @__PURE__ */ import_react4.default.createElement(App, null))
     );
     console.log("App.tsx: App() rendered");
   }

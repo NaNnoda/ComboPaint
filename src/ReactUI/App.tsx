@@ -30,7 +30,7 @@ function App() {
 
     return (
         <div
-            id="app"
+            id="justPaintDiv"
             onContextMenu={showContextMenu}
             style={{width: "100%", height: "100%"}}
             onClick={

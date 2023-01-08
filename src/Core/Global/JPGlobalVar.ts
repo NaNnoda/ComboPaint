@@ -21,16 +21,7 @@ export class JPGlobalVar {
     _allDocs: JustPaintDocument[] = [];
     _allDocsSet: Set<JustPaintDocument> = new Set<JustPaintDocument>();
 
-    // Singleton
-    static _instance: JPGlobalVar | null = null;
-    static get instance() {
-        if (JPGlobalVar._instance === null) {
-            console.log("Creating new instance of JustPaint");
-            JPGlobalVar._instance = new JPGlobalVar();
-        }
-        return JPGlobalVar._instance;
-    }
-
+    mainColor = "#000000";
 
     get currDoc(): JustPaintDocument {
         if (this._currDoc === null) {
@@ -147,7 +138,12 @@ export class JPGlobalVar {
         this.currTool = tool;
         this.currDoc.render();
         this.viewer.render();
+
+        globalEvent.addChangeMainColorListener((color) => {
+            this.mainColor = color;
+            console.log("Main color changed to " + color);
+        });
     }
 }
 
-export const globalVar = JPGlobalVar.instance;
+export const globalVar = new JPGlobalVar();
